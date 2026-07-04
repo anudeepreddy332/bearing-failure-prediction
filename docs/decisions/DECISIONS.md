@@ -293,6 +293,27 @@ block the first credibility deliverable.
 
 ---
 
+### D-020 — Production DB-build pipeline is partially implemented; `windows` table has no writer
+**Decision (pending user choice):** Documented the canonical empty→populated pipeline in
+`docs/runbooks/PIPELINE_RECREATION.md`. Verdict: the `features → labels → split → model`
+chain is complete and runnable, but the `windows` table has **no populating script
+anywhere** — so the requested "populated windows table" cannot be produced without new
+code. Did **not** write a windows-populator unprompted (constraint: don't create tables
+manually / don't bypass the pipeline); flagged three options (A: declare `windows`
+intentionally-unused and build the rest — recommended; B: implement a reviewed
+`ingest_windows.py`; C: proceed and leave the gap documented).
+**Why:** discovery task before the leakage study — the canonical pipeline must be
+recreatable from an empty DB first. Found via source read + grep: only `001_schema.sql`
+references `windows` (DDL only); `etl.py` windows are in-memory and aggregated straight to
+parquet.
+**Also documented as gaps:** migrations not auto-applied in this env; README pipeline order
+is wrong (omits `ingest_temporal.py` and `labeling.py`, mislabels `ingest.py` as "raw");
+only Set 1 raw data is present (Set 2 is an unextracted `.rar`, Set 3 empty).
+**Not executed yet:** awaiting the GAP-1 decision before running a heavy full ingest+tune
+against the live DB.
+
+---
+
 ## Log format for future entries
 
 ```
