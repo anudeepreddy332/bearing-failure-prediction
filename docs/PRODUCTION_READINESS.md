@@ -190,6 +190,17 @@ RUL regression, or is a deliberate *non*-pick argued explicitly.
 
 ## 10. Phased implementation roadmap
 
+> **⚠️ SUPERSEDED IN PART (2026-07-04):** A formal peer design review revised this
+> roadmap. See **`docs/DESIGN_REVIEW.md`** for the finalized architecture, the
+> re-ranked implementation order, and full rationale, and `docs/decisions/DECISIONS.md`
+> D-012…D-019. Net changes: **cut** the `src/bearing_rul` rename and TimescaleDB;
+> **swapped** cloud GCP → **Azure**; **added** a validation research study (LOBO +
+> purged-KFold + leakage quantification), IMS Set 2/3 ingestion, a first-class SHAP
+> explainability layer, expanded ML observability, and a lightweight synthetic
+> condition-monitoring simulator. The phase descriptions below remain valid for
+> Phase 1 (done) and as background; treat DESIGN_REVIEW.md's ordering as authoritative
+> for Phase 2 onward.
+
 ### Phase 1 — Quick wins (days · XS/S)
 - Collapse hardcoded DB fallbacks into one config source; env-first everywhere. *(F8, F9)*
 - Add `pyproject.toml` packaging + pinned dev tools. *(F2)*

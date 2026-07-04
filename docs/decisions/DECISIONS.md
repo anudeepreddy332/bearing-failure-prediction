@@ -195,6 +195,104 @@ don't exist yet.
 
 ---
 
+## Design review (2026-07-04) — ADRs D-012 … D-019
+
+These decisions came out of a formal peer design review. Full reasoning and the
+point-by-point response live in `docs/DESIGN_REVIEW.md`; the durable decisions are
+recorded here. Net effect: two roadmap items cut, four added, cloud target swapped.
+
+### D-012 — Validation is a research study (LOBO + purged-KFold), not a split swap
+**Decision:** F3 is fixed by a methodology study, not by replacing `train_test_split`.
+Primary metric = **Leave-One-Bearing-Out** (generalization to an unseen bearing);
+secondary = **purged/embargoed K-fold within trajectories** (online monitoring of a
+known asset), embargo ≥ longest rolling/EMA window. Mandatory deliverable: an
+old-vs-new comparison table quantifying the leakage inflation on the same model.
+**Why:** the current stratified split answers neither real PdM deployment question; it
+scores timestamps whose temporal neighbours are in the training set. F3.
+**Key constraint discovered:** Set 1 has only **2 independent physical failure
+trajectories** (bearings 3 and 4; x/y are the same bearing on two sensors). So LOBO is
+a 2-fold study and the honest headline metric will be much worse and much noisier than
+the leaky 0.985. That is accepted — credibility over optimism.
+**Unblocked now:** the study runs offline from `set1_features_temporal.parquet` (all
+172 features + labels present); no database required.
+**Rejected alternative:** pure time-forward split per trajectory — recreates the
+original −11.9 R² failure (test = low-RUL only).
+
+### D-013 — Cut the `src/` → `src/bearing_rul/` package rename
+**Decision:** Removed from the roadmap entirely (was deferred in D-003; now cancelled).
+**Why:** zero résumé/recruiter value, zero real problem solved, non-zero cost and diff
+churn. The only real benefit (installable package) was already delivered by the Phase-1
+`pyproject.toml` without the rename. Fails the item-8 filter (must solve a real problem
+*and* add hiring value — it does neither).
+
+### D-014 — Cloud target: Azure (was GCP)
+**Decision:** Deploy to **Azure Container Apps** + Azure Database for PostgreSQL Flexible
+Server + Azure Key Vault + Azure Container Registry. Terraform retargeted to Azure.
+**Why:** industrial/manufacturing/PdM is disproportionately a Microsoft/Azure market
+(Azure IoT Hub/Edge/Digital Twins/ML, first-party PdM accelerator; Siemens/GE/Rockwell/
+ABB). Portfolio already shows AWS ×2, so Azure adds diversity **and** domain relevance,
+where GCP added diversity only — two reasons beat one.
+**Rejected alternative:** GCP Cloud Run. Honestly the cleaner DX and lower idle cost, and
+the pick if optimizing for developer experience alone — but it does not carry the domain
+signal, which is the whole point of a PdM portfolio project. Trade-off accepted and noted.
+
+### D-015 — Do NOT add TimescaleDB; plain Postgres is sufficient
+**Decision:** Removed from the roadmap.
+**Why:** the dataset is static and tiny (~2156 timestamps/bearing); even with the
+simulator the row rate is trivial. TimescaleDB solves a scale problem this project does
+not have. Adding it would be cargo-cult infra (fails item 8). Choosing *not* to add it —
+and documenting why — is the stronger engineering signal.
+**Note:** on Azure, Flexible Server *does* support the `timescaledb` extension (unlike GCP
+Cloud SQL), so the old "must self-host" caveat weakens — but the core objection stands.
+
+### D-016 — Explainability as a first-class production feature (SHAP + domain layer)
+**Decision:** Add TreeSHAP global (beeswarm) + local (per-prediction waterfall), an
+`/explain` API endpoint (and `explain=true` on `/predict`), a dashboard waterfall, and a
+**domain-translation layer** mapping top features to failure-mode physics (rising
+`kurtosis_ema` → spalling/impacts; `bp_1k_5k_ema` → defect-frequency energy). Plus docs
+and operational guidance.
+**Why:** "why does this bearing have 40h left?" is the question a maintenance engineer
+asks; a PdM system that can't answer it doesn't get deployed. TreeSHAP is exact/cheap on
+LightGBM.
+**Hard sequencing constraint:** ships *after* the validation fix + honest retrain.
+Explaining a leaky model explains an artifact of the leak.
+
+### D-017 — Expand service observability into ML observability
+**Decision:** Adopt a full ML-SLI taxonomy — model SLIs (RUL distribution, CI-width/
+uncertainty distribution, feature drift via PSI, %warning/%critical), data/pipeline SLIs
+(feature-validation + data-quality failures), governance (model version/alias, last-retrain
+ts, training-data hash) — on top of service SLIs. Three Grafana boards (service/model/
+fleet-ops), SLOs with error budgets, and alerting. Prometheus for metrics.
+**Why:** the audit's observability was service-centric; this is what distinguishes "added
+Grafana" from "understands ML-systems observability." Made *live* by the simulator (D-018).
+
+### D-018 — Add a lightweight synthetic condition-monitoring simulator + online feature engine
+**Decision:** Add a replay-based simulator (`scripts/simulator.py`) that streams a real IMS
+run-to-failure trajectory at accelerated time through an **online/stateful feature engine**
+(per-bearing rolling-window buffer for incremental EMA/rolling/slope) → predict → explain →
+threshold → alert → dashboard. Transport: timed loop or **Redis Streams** (Redis already in
+stack). **No Kafka.**
+**Why:** converts the project from "model + static dashboard" (every candidate has this) into
+a "continuous condition-monitoring system," and makes explainability (D-016) and observability
+(D-017) live and demoable. Highest-leverage single addition; also forces a genuine
+streaming-features engineering piece.
+**Risk recorded:** biggest scope item — sequenced *after* validation + core online path, must
+not distract from the credibility fix. If the honest model is weak, the system still
+demonstrates honestly (wide uncertainty bands are a feature).
+**Rejected alternative:** Kafka/full streaming infra — disproportionate; explicitly out.
+
+### D-019 — Ingest IMS Set 2 & Set 3 to make LOBO defensible (addition beyond the review)
+**Decision:** Ingest Sets 2 and 3 (each adds an independent failure event on a different rig
+run) so Leave-One-Bearing-Out becomes a ~4-fold study across genuinely different degradation
+histories instead of a 2-fold anecdote.
+**Why:** two trajectories cannot support a "generalizes across bearings" claim; more
+independent failures is the only honest way to earn it. Retires audit finding F7.
+**Caveat:** Sets 2/3 use 1 accelerometer per bearing vs Set 1's 2 → feature extraction needs a
+channel-count branch. Sequenced as Phase 2b (after the Set-1 leakage study ships) so it doesn't
+block the first credibility deliverable.
+
+---
+
 ## Log format for future entries
 
 ```
