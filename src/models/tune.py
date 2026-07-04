@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 import optuna
 from sqlalchemy import create_engine
-from sklearn.metrics import mean_absolute_error
 import lightgbm as lgb
 import warnings
 

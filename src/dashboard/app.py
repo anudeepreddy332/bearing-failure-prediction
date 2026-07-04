@@ -2,14 +2,13 @@
 """
 Interactive Streamlit dashboard for bearing health monitoring
 """
+import os
 import streamlit as st
 import pandas as pd
 import pickle
-import numpy as np
 from sqlalchemy import create_engine
 import plotly.graph_objects as go
 import plotly.express as px
-from pathlib import Path
 
 # Page config
 st.set_page_config(
@@ -28,7 +27,8 @@ def load_model():
 
 @st.cache_resource
 def get_db_connection():
-    return create_engine('postgresql://postgres:postgres@localhost:5432/anudeep')
+    # Env-first (was hardcoded with no override). Default preserved for local dev.
+    return create_engine(os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/anudeep'))
 
 
 model = load_model()

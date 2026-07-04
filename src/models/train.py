@@ -9,7 +9,6 @@ Usage:
     python src/models/train.py --model both
 """
 import os
-import sys
 import argparse
 import logging
 import pickle

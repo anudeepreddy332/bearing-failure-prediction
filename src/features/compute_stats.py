@@ -8,12 +8,9 @@ Usage:
     python src/features/compute_stats.py --plot-only
 """
 import os
-import sys
 import argparse
 import logging
 from pathlib import Path
-from datetime import datetime
-import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine, text
 import matplotlib.pyplot as plt

@@ -341,7 +341,32 @@ trust in front of a hiring panel that reads the diff."
 ## Changelog — hardening work on `production-readiness-refactor`
 
 This section is updated as work lands on the branch. It is the durable record of what
-has actually been changed vs. what remains blueprint.
+has actually been changed vs. what remains blueprint. **Full reasoning for every item
+below lives in `docs/decisions/DECISIONS.md` (D-001 through D-011) — this is the
+short version.**
 
-- **2026-07-04** — Branch created. Audit written to this file. Hardening pass begins.
-  See the branch commit history for the authoritative, up-to-date status.
+- **2026-07-04** — Branch `production-readiness-refactor` created; all work happens
+  here, nothing merges/pushes to `main` without explicit approval. Audit written to
+  this file.
+- **2026-07-04** — **Phase 1 quick wins landed:**
+  - Config consolidated into `src/config.py` (`get_database_url()`, `get_model_path()`,
+    `get_features_path()`); the three files with *no* env override
+    (`evaluate_tuned.py`, `dashboard/app.py`, the old `src/data/test.py`) fixed to
+    read `DATABASE_URL` first. *(partial fix for F8 — full fix needs every call site
+    migrated, tracked as follow-up)*
+  - Packaging added (`pyproject.toml`, editable install); `__init__.py` added to every
+    `src/` subpackage. *(fixes F2)*
+  - `src/data/test.py` → `scripts/db_sanity_check.py`, renamed and `__main__`-guarded.
+  - First test suite: 24 tests (pytest + Hypothesis) covering `src/preprocess.py` and
+    `src/temporal_features.py`, including explicit group-isolation regression tests
+    tied to finding F3. *(starts F11 — Postgres-coupled modules still untested)*
+  - `ruff check .` clean (conservative rule set; 16 pre-existing unused imports
+    auto-fixed, zero behavior change). *(starts F22)*
+  - CI workflow added: lint + test on every push/PR. *(fixes F21)*
+  - Canonical pipeline documented: Postgres pipeline (`src/data`+`src/features`+
+    `src/models`) is production; `notebooks/` marked historical via new
+    `notebooks/README.md`. *(fixes F1, F27)*
+- **Still open from Phase 1/2:** the `src/` → `src/bearing_rul/` rename (deferred,
+  needs a live-DB verification pass — see D-003); the F3 split-leakage fix itself
+  (needs a live DB to re-run the pipeline); API auth/rate-limiting (F24); containers
+  for the app (F18). These are next.
