@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ims-bearing-failure-prediction"
+version = "0.1.0"
+description = "Predictive-maintenance ML system estimating bearing Remaining Useful Life (RUL) from vibration signals."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Anudeep" }]
+
+# Runtime deps are pinned in requirements.txt (kept as the single source of
+# truth for reproducible installs). This block lists the same top-level libs
+# without hard pins so `pip install -e .` resolves against an existing env.
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",
+    "lightgbm",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "matplotlib",
+    "seaborn",
+    "plotly",
+    "streamlit",
+    "tqdm",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+api = ["fastapi", "uvicorn", "pydantic"]
+dev = ["pytest", "hypothesis", "ruff", "httpx"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+# --- Ruff -------------------------------------------------------------------
+# Conservative rule set on purpose: this enforces the errors that are always
+# bugs (syntax errors, undefined names, broken f-strings, star-import misuse)
+# without turning legacy-style-nits into a red CI on day one. The rule set is
+# meant to be widened in a follow-up once the codebase is formatted.
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = [".venv", ".venv1", "notebooks", "data", "reports"]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401", "F811"]
+# src/data/test.py is a throwaway DB-connection scratch script, not a module.
+[tool.ruff.lint.per-file-ignores]
+"src/data/test.py" = ["F401"]
+
+# --- Pytest -----------------------------------------------------------------
+[tool.pytest.ini_options]
+# Only collect the real test suite. This deliberately excludes src/data/test.py,
+# which opens a live DB connection at import time and would hang collection.
+testpaths = ["tests"]
+addopts = "-ra -q"
+markers = [
+    "integration: tests that need optional artifacts (model pickle, DB) and skip when absent",
+]

@@ -12,13 +12,24 @@ zone), a Streamlit monitoring dashboard, and a FastAPI prediction endpoint.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # set DATABASE_URL, etc.
+pip install -e ".[dev]"        # editable install + pytest/ruff/hypothesis
+cp .env.example .env           # set DATABASE_URL, etc.
 ```
 
-There is no test suite, linter, or formatter configured in this repo (no pytest config, no
-`.flake8`/`ruff`/`black` config, no CI). `src/data/test.py` is a scratch script, not a real test.
-Don't assume `pytest` will find anything to run.
+**Production readiness work is tracked on the `production-readiness-refactor` branch —
+see `docs/PRODUCTION_READINESS.md` (audit + roadmap) and `docs/decisions/DECISIONS.md`
+(running decision log, updated as work lands). Do not merge/push that branch to `main`
+without explicit user approval.**
+
+There is a real test suite now, scoped narrowly and honestly: `pytest tests/` runs 24
+tests (example-based + Hypothesis property-based) covering the pure, DB-free functions
+in `src/preprocess.py` and `src/temporal_features.py`. `ruff check .` runs a
+conservative rule set (real bugs + unused imports only — see DECISIONS.md D-004). CI
+(`.github/workflows/ci.yml`) runs both on every push/PR. Everything under
+`src/data/*.py`, `src/features/*.py`, `src/models/*.py` is Postgres-coupled and
+**not yet covered by tests** — that requires a live DB fixture and is Phase 2 work
+(see the roadmap). The old `src/data/test.py` scratch script (opened a live DB
+connection at import time, not a real test) now lives at `scripts/db_sanity_check.py`.
 
 ## Database
 

@@ -5,9 +5,7 @@ FastAPI endpoint for real-time bearing RUL prediction
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pickle
-import numpy as np
 import pandas as pd
-from typing import List
 
 app = FastAPI(title="Bearing RUL Prediction API")
 
