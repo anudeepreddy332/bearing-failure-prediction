@@ -588,6 +588,38 @@ implementation requiring separate authorization and the D-027/design-document ga
 
 ---
 
+### D-029 — Require a Set 1 canonical foundation before Set 2 implementation
+**Decision:** Establish Set 1 methodological correctness and cold-clone reproducibility
+before any Set 2 implementation. Phase A is limited to deterministic Set 1 source
+registration and manifesting. `common_sensor_view_v1` must first be proven on Set 1;
+Set 2 remains external-before-pooling and unauthorized for extraction, implementation,
+or evaluation in this phase.
+**Why:** The existing Set 1 pipeline has historical raw/parquet/Postgres paths but no
+versioned source manifest or canonical foundation. The leakage-safe study also shows
+that the current model has only two complete failed physical trajectories, so retuning
+cannot support honest trajectory-nested hyperparameter selection. Fixing source
+provenance and validation boundaries has higher value than tuning a statistically thin
+model or beginning another dataset.
+**Evidence used:** D-021 through D-028; `docs/EVALUATION_POLICY.md`; the verified
+2,156 timestamped Set 1 recordings; the stale 2,157-file runbook claim; and the
+leakage-safe Phase 1/RCA evidence that bearings 3 and 4 are the only complete Set 1
+failures. The existing `src/data/split_stratified.py` is row-level and leaky, while the
+historical Postgres path is non-canonical for generalization evidence.
+**Scope boundary:** Foundation completion is determined by source correctness,
+determinism, provenance, and tests. Poor honest model metrics do not fail the foundation;
+they remain evidence that blocks production or broad generalization claims. This decision
+does not authorize canonicalization, labels, features, splits, evaluation, training,
+retuning, serving changes, Set 2 extraction, or Set 2 pooling.
+**Rejected alternatives:** Retuning before a canonical Set 1 foundation, using the
+historical row-level split as a tuning target, and beginning Set 2 intake before proving
+`common_sensor_view_v1` on Set 1 were rejected.
+**Remaining limitations:** Set 1 remains a two-failed-trajectory study, so no future
+Set 1-only tuning result can establish robust hyperparameter selection or production
+readiness. Set 2 is still external-before-pooling and requires its separate documented
+gates plus human authorization.
+
+---
+
 ## Log format for future entries
 
 ```

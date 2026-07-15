@@ -29,7 +29,7 @@ anywhere** and cannot be filled without new code. Details below.
 ## The canonical pipeline (intended order, verified from source)
 
 ```
-                          data/raw/set1/1st_test/   (2157 real IMS ASCII files — PRESENT)
+                          data/raw/set1/1st_test/   (2,156 real IMS ASCII files — PRESENT)
                                    │
    [A] src/data/etl.py            ▼   parse → window → aggregate → temporal features
        (raw ASCII → parquet;      ├──────────────▶ data/processed/set1_features.parquet          (base, 26 cols)
@@ -55,6 +55,11 @@ sequence above is manual.
 ---
 
 ## Gap analysis — exactly what is missing
+
+The Postgres sequence in this runbook is a **legacy, non-canonical recreation path**.
+It can recreate historical artifacts but includes the row-level stratified split that
+is not valid generalization evidence. Use the leakage-safe offline validation reports
+for current model-evidence claims.
 
 ### GAP 1 (blocking the requested end-state) — the `windows` table has no writer
 `001_schema.sql` defines and indexes a `windows` table, but **no script in the
@@ -86,7 +91,7 @@ verbatim produces an unlabeled, temporal-feature-less table. The verified order 
 supersedes it.
 
 ### GAP 4 — only Set 1 is reproducible
-`data/raw/set1/1st_test/` has all 2157 files. `data/raw/set2/` contains only an
+`data/raw/set1/1st_test/` has all 2,156 timestamped recording files. `data/raw/set2/` contains only an
 unextracted `2nd_test.rar`; `data/raw/set3/` is empty. So from truly-raw inputs only
 Set 1 can be rebuilt. (This intersects the Phase-2 plan to ingest Sets 2/3 for
 Leave-One-Bearing-Out validation — those raw files must be sourced/extracted first.)
