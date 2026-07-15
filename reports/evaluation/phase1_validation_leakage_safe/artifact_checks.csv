@@ -1,0 +1,6 @@
+artifact,exists,rows,columns,key_columns,duplicate_key_rows,unique_keys,failed_count,censored_count,rul_not_null,missing_selected_features,inf_values_numeric
+data/processed/set1_features.parquet,True,17248,26,"file,timestamp,channel,bearing,axis",0,17248,,,,47,0
+data/processed/set1_features_temporal.parquet,True,137984,172,"file,timestamp,channel,bearing,axis",120736,17248,68992.0,,68992.0,33,0
+data/processed/set1_labeled.parquet,True,17248,30,"file,timestamp,channel,bearing,axis",0,17248,8624.0,8624.0,8624.0,47,0
+data/processed/test_base_features.parquet,True,17248,26,"file,timestamp,channel,bearing,axis",0,17248,,,,47,0
+data/processed/test_temporal_features.parquet,True,17248,386,"file,timestamp,channel,bearing,axis",0,17248,,,,0,0
