@@ -427,6 +427,89 @@ effects remain inconclusive until a separate leakage-safe retuning study is run 
 
 ---
 
+### D-025 — Additional IMS failure data is conditional; ingestion is deferred
+**Decision:** Do not ingest, extract, transform, combine, or relabel IMS Sets 2 or 3
+in this phase. Set 2 is a **CONDITIONAL GO** for a dedicated, schema-first ingestion
+change after explicit integrity, extraction, identity, label-provenance, and
+cross-dataset validation gates pass. Set 3 is **NOT VERIFIABLE** for ingestion because
+its local raw directory is empty and no archive is present. Set 1 remains the only
+currently usable validation dataset.
+**Why:** The leakage-safe root-cause analysis shows that Set 1 has only two independent
+failed physical bearings, which is insufficient for a credible unseen-bearing claim.
+Additional independent run-to-failure trajectories are therefore higher value than more
+rows from the existing two bearings. However, directly reusing the current Set-1-only
+pipeline would silently corrupt Set 2 identity and labels: `src/config.py` maps four
+Set-2 channels as two x/y bearing pairs, and `src/data/labeling.py` hardcodes failed
+bearings `{3, 4}`. The local IMS metadata also confirms that Set 1 has two sensors per
+bearing whereas Sets 2 and 3 have one sensor per bearing, so cross-axis aggregate
+features cannot be assumed comparable.
+**Evidence used:** `data/Readme Document for IMS Bearing Data.pdf` documents Set 1 as
+2,156 files/8 channels with failures in bearings 3 and 4; Set 2 as 984 files/4 channels
+with an outer-race failure in bearing 1; and Set 3 as 4,448 files/4 channels with an
+outer-race failure in bearing 3. Local inspection confirms all 2,156 Set-1 files, a
+readable Set-2 RAR containing 984 timestamped 20,480-by-4 records from
+2004-02-12 10:32:39 through 2004-02-19 06:22:39, and no Set-3 raw files. The Set-2
+archive SHA-256 was recorded during the audit, but no expected checksum/manifest exists
+in the repository. `reports/evaluation/root_cause_analysis/root_cause_report.md`
+documents the two-bearing Set-1 limitation and bearing distribution shift.
+**Required gates before inclusion:** preserve the archive and raw files immutably;
+verify archive/file counts, hashes, shapes, timestamps, and ordering; create a manifest
+with deterministic dataset/run/bearing/sensor identifiers; use one physical bearing
+trajectory (not an axis/channel) as the validation grouping unit; record the terminal
+failure annotation and label provenance per trajectory; keep unfailed bearings as
+unknown/censored until supported by source metadata; rebuild features and feature
+selection within training folds; and report per-dataset, per-trajectory, worst-fold,
+and drift metrics.
+**Rejected alternatives:** Running the existing ETL against Set 2 was rejected because
+its hardcoded channel map would misidentify the physical bearings. Treating Set-1 x/y
+channels as independent trajectories was rejected because they are co-located sensors on
+one bearing. Direct pooling before harmonization was rejected because sensor schema,
+failure mode, and experimental-run differences can create dataset shortcuts. Downloading
+or reconstructing Set 3 was rejected because this phase is an audit and no external
+data acquisition was approved.
+**Remaining risks:** The repository does not establish timestamps' timezone, Set-2/3
+nonfailure censoring status, a source checksum for the Set-2 archive, or set-specific
+operating-condition equivalence. The current schema lacks dataset/run/provenance keys,
+and current cross-axis features are not defined for one-sensor Sets 2/3.
+
+---
+
+### D-026 — Set 2 enters as a separate external-validation domain before pooling
+**Decision:** Added `docs/SET2_INTAKE_DESIGN.md` as the implementation contract for a
+future Terra intake phase. Set 2 will progress through immutable archive registration,
+transactional extraction, canonical trajectory/sensor mapping, dataset-aware labels,
+and a common single-sensor feature contract. It is external-validation data first, not
+pooled training data. Pooling requires a later ADR after a Set-1-only compatible model
+and preprocessor are frozen and evaluated on Set 2 without using Set 2 for selection.
+**Why:** Set 2 can add one independent failed trajectory, but the repository has no
+evidence that its one-sensor measurements are exchangeable with Set 1's two-axis
+measurements. Direct pooling would remove the only honest dataset-level holdout and risk
+learning sensor-layout or dataset shortcuts. The existing Set 1 ETL/channel map and
+failed-bearing labeler are also demonstrably incompatible with Set 2.
+**Evidence used:** D-025 records the verified Set 2 archive/file/schema/failure facts.
+`reports/evaluation/root_cause_analysis/root_cause_report.md` shows poor two-bearing
+Set-1 LOBO generalization and major bearing distribution shift. `src/config.py`,
+`src/data/etl.py`, and `src/data/labeling.py` encode Set-1-only identity and labels.
+**Feature-contract decision:** Cross-set v1 uses one explicitly designated primary
+sensor per bearing and single-channel causal features. Set 1 uses the existing map's
+x/first channels (zero-based 0, 2, 4, and 6), fixed before cross-set evaluation. Set 1's
+second sensor remains in canonical sensor observations and a Set-1-only feature family;
+it is not silently treated as another trajectory. Set 2 `axis` remains null. Cross-axis
+selected features and direct dataset/channel identity fields are excluded from the common
+model contract and reported explicitly.
+**Rejected alternatives:** Direct pooling, reuse of the current Set-1 ETL/labeler,
+inventing Set-2 axes, treating Set-1 channels as independent rows/trajectories, silently
+dropping incompatible selected features, global cross-dataset preprocessing, and Set-3
+acquisition before Set-2 intake passes were rejected.
+**Rollback and remaining risks:** Raw bytes are immutable; partial extraction never
+publishes; canonical/label/feature/report outputs are versioned and superseded rather
+than overwritten. Unknown Set-2 sensor orientation, incomplete source-authenticity
+provenance, possible operating-condition shift, and only one failed Set-2 bearing remain
+explicit limitations. This decision does not authorize extraction, training, pooling,
+Set-3 download, Git integration, or any production claim.
+
+---
+
 ## Log format for future entries
 
 ```
