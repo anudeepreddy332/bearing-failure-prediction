@@ -314,6 +314,42 @@ against the live DB.
 
 ---
 
+### D-021 — Phase 1 validation now has fold-local leakage-safe preprocessing
+**Decision:** Extended `src/models/offline_validation.py` with a `--feature-mode
+leakage_safe` path and wrote new outputs under
+`reports/evaluation/phase1_validation_leakage_safe/`, preserving the earlier
+`reports/evaluation/phase1_validation/` results. The leakage-safe path starts from
+`data/processed/test_base_features.parquet` plus labels, classifies all 50 selected
+features, recomputes rolling/EMA/cross-axis aggregate features inside each fold split,
+and fits z-score statistics on training rows only before applying them to validation/test
+rows. Added split diagnostics for exact key overlap and same-bearing timestamp overlap,
+plus unit tests covering train-only z-score fitting and LOBO/purged contamination checks.
+**Why:** The first Phase 1 study fixed split leakage but still used
+`test_temporal_features.parquet`, whose temporal/z-score features had been computed before
+validation splitting. Five selected features are z-scores using full bearing-axis
+statistics, and most selected features are rolling/EMA/cross-axis derivatives. That means
+held-out fold information could still leak into feature values even when the split itself
+is more honest.
+**Evidence used:** `data/processed/selected_features.csv` shows only 3 base selected
+features and 47 derived selected features; `src/temporal_features.py` computes z-score via
+full-group mean/std; Phase 1 leakage-safe comparison worsened the current row-level
+baseline from weighted MAE 10.91h to 20.14h and critical MAE 2.50h to 4.32h. LOBO remained
+poor (weighted MAE 226.46h, critical MAE 82.54h), confirming the README-style production
+claims are still not defensible.
+**Rejected alternatives:** Overwriting the original Phase 1 report was rejected because
+the before/after comparison must remain reproducible. Rebuilding the entire project
+pipeline or retraining/tuning models was rejected because this task is only a validation
+truth-stabilization pass. Dropping all derived features was rejected because it would
+answer a different question; the goal here is to evaluate the same selected feature set
+under safer preprocessing.
+**Remaining risks:** The z-score fallback for LOBO unseen bearings uses global training
+statistics because no same-bearing training statistics exist; this is honest but changes
+feature semantics. Hyperparameters are still inherited from the old leaky tuning regime.
+Set 1 still has only two failed physical bearings, so LOBO is high-value but statistically
+thin.
+
+---
+
 ## Log format for future entries
 
 ```
