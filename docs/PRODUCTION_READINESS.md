@@ -19,10 +19,10 @@
 
 | Score | Value | Rationale |
 |-------|-------|-----------|
-| **Current maturity** | **33 / 100** | Strong ML narrative, weak engineering scaffolding. |
-| **Production readiness** | **18 / 100** | No CI, no app container, no auth, no monitoring, no deploy target. |
-| **Hiring portfolio score** | **55 / 100** | The story sells; an interviewer who pulls the split logic finds the leak. |
-| **Resume impact score** | **62 / 100** | "2.88h MAE, 10x improvement, $300K savings" reads well — until asked to defend it live. |
+| **Current maturity** | **38 / 100** | The project now documents its validation failure honestly, but model evidence is weak. |
+| **Production readiness** | **18 / 100** | No app container, no auth, no monitoring, no deploy target, and no validated production model. |
+| **Hiring portfolio score** | **58 / 100** | Stronger credibility after correcting leakage claims; weaker headline metrics. |
+| **Resume impact score** | **45 / 100** | The old metric story is deprecated; the current story is methodology repair and ML rigor. |
 
 Scoring is a blended read across the twelve audit categories (ML rigor, SWE
 practice, testing, MLOps, infra, CI/CD, observability, API, frontend, docs,
@@ -55,7 +55,7 @@ readiness score is the single biggest thing the refactor should close.
 
 ## 6. Top weaknesses
 
-1. **The headline metric likely leaks** (see F3 below) — the biggest single issue.
+1. **The original headline metric leaked** (see F3 below) — now quantified, but not yet solved as a model-quality problem.
 2. **Zero automated tests, zero CI.**
 3. **Config drift baked into the code** — six files hardcode a personal DB name that
    matches neither `docker-compose.yml` nor the README.
@@ -86,17 +86,23 @@ already seen in training a few timestamps away. That is textbook temporal leakag
 and with only four underlying trajectories it is severe enough to plausibly explain
 most of the jump from the honest −11.9 (time split) to the reported 0.985.
 
-**The fix is not "add more stratification."** It is a blocked/grouped holdout
-(leave-one-trajectory-out, or contiguous time-blocked splits within each trajectory),
-the entire pipeline re-evaluated, and the README's numbers revised to match reality.
-**This requires a live database to re-run and verify, so it is Phase 2 work, not part
-of the initial hardening pass. It is the #1 open modeling item.**
+**Status as of 2026-07-09:** the leakage has been quantified offline and the public
+claims have been corrected. The current source-of-truth report is
+`reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
+Leakage-safe preprocessing worsened the row-level baseline from weighted MAE 10.91h
+to 20.14h, while LOBO remained poor at 226.46h weighted MAE and 82.54h critical-zone
+MAE. The old README metrics (`2.88h` critical-zone MAE, `13.42h` overall MAE,
+`R2 = 0.9852`) are deprecated leaky-baseline numbers, not production evidence.
+
+**The remaining fix is not "add more stratification."** It is to retune and evaluate
+under leakage-safe LOBO/purged validation, then ingest additional independent failure
+trajectories before making any generalization claim.
 
 ### Findings table
 
 | ID | Finding | Category | Severity | Effort | Hire | Prod | Biz | Debt |
 |----|---------|----------|----------|--------|------|------|-----|------|
-| F3 | Row-level split leaks across 4 trajectories → inflated R² | ML methodology | **Critical** | M | 10 | 9 | 9 | 10 |
+| F3 | Row-level split leaks across trajectories; old R² deprecated | ML methodology | **Critical** | M | 10 | 9 | 9 | 10 |
 | F11 | Zero unit/integration tests anywhere | Testing | **Critical** | M | 9 | 8 | 4 | 9 |
 | F24 | Predict API: no auth/rate limit + bare `pickle.load` | API / security | **Critical** | S | 7 | 9 | 4 | 6 |
 | F4 | No k-fold/CV — single point-estimate metrics | ML methodology | High | S | 8 | 6 | 5 | 6 |
@@ -319,8 +325,8 @@ fix early. Steps marked *parallel-safe* touch disjoint directories.
 2. **Add packaging** — `pyproject.toml`, editable install. *parallel-safe with 1*
 3. **First test suite** — pytest + Hypothesis for `preprocess.py` / `temporal_features.py`. *(tests/ only)*
 4. **CI: lint + test only.** *(depends on 2–3)*
-5. **Fix the split (F3)** — blocked/grouped holdout; re-run pipeline; update README. *(needs live DB)*
-6. **Grouped k-fold CV** in tuning. *(builds on 5)*
+5. **Retune under leakage-safe LOBO/purged validation** — the split study exists; the model still needs an honest optimization loop.
+6. **Ingest additional failed bearings from IMS Sets 2/3** so LOBO is not a two-fold Set 1 anecdote.
 7. **Terraform skeleton.** *parallel-safe with 5–6*
 8. **Containerize API + dashboard.** *parallel-safe with 7*
 9. **API hardening** — JWT, rate limit, safe deserialization. *(after 8)*
@@ -377,7 +383,13 @@ short version.**
   - Canonical pipeline documented: Postgres pipeline (`src/data`+`src/features`+
     `src/models`) is production; `notebooks/` marked historical via new
     `notebooks/README.md`. *(fixes F1, F27)*
-- **Still open from Phase 1/2:** the `src/` → `src/bearing_rul/` rename (deferred,
-  needs a live-DB verification pass — see D-003); the F3 split-leakage fix itself
-  (needs a live DB to re-run the pipeline); API auth/rate-limiting (F24); containers
-  for the app (F18). These are next.
+- **2026-07-09** — Phase 1 leakage validation completed and claims corrected:
+  - `reports/evaluation/phase1_validation/` compares the old row-level split against
+    LOBO and purged time-series validation.
+  - `reports/evaluation/phase1_validation_leakage_safe/` recomputes fold-local
+    preprocessing and is now the source-of-truth validation report.
+  - README/dashboard/case-study claims were corrected to stop presenting the old
+    `2.88h` / `0.9852` metrics as production evidence.
+- **Still open from Phase 1/2:** leakage-safe retuning; more independent failure
+  trajectories via IMS Sets 2/3; API auth/rate-limiting (F24); containers for the app
+  (F18). These are next.

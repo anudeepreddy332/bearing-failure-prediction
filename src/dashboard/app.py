@@ -37,7 +37,11 @@ features = pd.read_csv('data/processed/selected_features.csv')['feature'].tolist
 
 # Dashboard header
 st.title("⚙️ Bearing Failure Prediction Dashboard")
-st.markdown("**Real-time monitoring and RUL prediction | 2.88h MAE (critical zone)**")
+st.markdown("**Prototype RUL monitoring dashboard | validation claims under correction**")
+st.warning(
+    "This dashboard uses the existing leaky-regime model artifact. "
+    "Current source-of-truth validation is leakage-safe Phase 1, not the old 2.88h headline metric."
+)
 
 # Sidebar
 st.sidebar.header("Configuration")
@@ -243,10 +247,11 @@ else:
 st.markdown("---")
 st.markdown("""
 **Model Details:**
-- **Algorithm:** LightGBM v2 (Optuna-tuned, 80 trials)
-- **Critical Zone MAE:** 2.88 hours (0-50h RUL range)
-- **Overall MAE:** 13.42 hours
-- **R²:** 0.9852 (98.5% variance explained)
+- **Algorithm:** LightGBM v2 artifact from the earlier tuning regime
+- **Validation status:** Prototype only; old row-level metrics are deprecated due to leakage
+- **Leakage-safe LOBO MAE:** 226.46 hours
+- **Leakage-safe purged time-series MAE:** 122.00 hours
+- **Source-of-truth report:** `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`
 - **Dataset:** NASA IMS Bearing Dataset
 - **Features:** 50 selected from 380 engineered features
 - **Author:** Anudeep | Mechanical Engineer → Data Scientist

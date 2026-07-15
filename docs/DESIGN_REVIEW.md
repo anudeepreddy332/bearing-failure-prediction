@@ -68,16 +68,32 @@ when you have already seen its neighbours," which no real deployment ever gets t
   rolling/EMA window (span 30 → embargo ≥ 30 samples) so no test row's rolling features were
   computed from a training row. This measures the "online monitoring of a known asset" case.
 - **Leakage quantification (mandatory):** run the *old* stratified split and both new schemes
-  on the *same* model and features, and report the deltas in one table. That table — "R²
-  0.985 (leaky) → X (LOBO) → Y (purged)" — is the single most credible artifact this whole
-  refactor will produce. It demonstrates the one skill senior reviewers actually probe for:
-  can this person detect and quantify their own leakage.
+  on the *same* model and features, and report the deltas in one table. This has now been
+  delivered in `reports/evaluation/phase1_validation_leakage_safe/comparison_metrics.csv`:
+  the old attractive row-level baseline remains leaky, while LOBO and purged validation
+  show much weaker performance. This demonstrates the one skill senior reviewers actually
+  probe for: can this person detect and quantify their own leakage.
 
-### 1c. This is unblocked *now* (no database required)
-`set1_features_temporal.parquet` carries all 172 temporal features + `bearing`/`axis`/
-`rul_hours`/`failed`. The entire study runs offline from parquet. The Postgres pipeline
-only needs updating *after* the methodology is chosen, to write the new `split` labels.
-This removes the dependency that was blocking Phase 2's top item.
+### 1c. Phase 1 study completed offline; leakage-safe results are now source of truth
+The first validation study ran offline from parquet and compared the old row-level
+baseline against LOBO and purged time-series validation. A follow-up leakage-safe run
+then rebuilt the selected features from `test_base_features.parquet` inside each fold,
+so rolling/EMA/cross-axis aggregates and z-score statistics no longer peek at held-out
+rows.
+
+Current source-of-truth report:
+`reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
+
+Leakage-safe summary:
+
+| Strategy | Weighted MAE | Weighted RMSE | Mean R2 | Critical-zone MAE |
+|---|---:|---:|---:|---:|
+| Current row-level baseline, still leaky | 20.14h | 33.73h | 0.9796 | 4.32h |
+| LOBO | 226.46h | 285.37h | -0.5009 | 82.54h |
+| Purged time-series CV | 122.00h | 146.80h | -7.8162 | 78.47h |
+
+The old `2.88h` critical-zone MAE and `R2 = 0.9852` are deprecated leaky-baseline
+numbers. They are useful only as an inflation comparison, not as production evidence.
 
 ### 1d. Addition beyond the review — ingest Set 2 & Set 3 to earn the generalization claim
 Two trajectories cannot support a defensible "generalizes across bearings" statement.
@@ -89,9 +105,11 @@ channel-count branch — tracked). This is the honest way to make the headline c
 and it directly retires audit finding F7. **Sequenced as Phase 2b so it doesn't block the
 Set-1 leakage-quantification study, which ships first.**
 
-**Deliverables when implemented:** ADR justifying the strategy; old-vs-new comparison table;
-every reported metric updated (README, model metadata, dashboard copy); worse numbers shown,
-not hidden. Agreed and committed.
+**Delivered:** ADR/decision entries justify the strategy; old-vs-new comparison tables
+exist in `reports/evaluation/phase1_validation_leakage_safe/comparison_metrics.csv`;
+README and user-facing dashboard/case-study copy have been corrected. Worse numbers are
+shown, not hidden. Remaining technical work is leakage-safe retuning and additional
+independent failure trajectories.
 
 ---
 
