@@ -59,7 +59,7 @@ so the total would still be only three failed trajectories.
 | Bearings 2-4 did not reach documented failure | Established project fact from available metadata | Right-censored at last observation; RUL remains null |
 | Timestamp timezone | Not verifiable | Preserve source-local timestamp and null timezone |
 | Set 1 and Set 2 operating-condition equivalence | Not verifiable per set | Treat dataset/run as a possible domain-shift source |
-| Source archive authenticity/license chain | Incomplete | Require source/license metadata before acceptance |
+| Source archive authenticity/license chain | Incomplete | Record the gap as a non-blocking intake diagnostic; require applicable approval before external release |
 
 Immutable raw facts and derived values must remain separate. A label is not a raw
 fact merely because it is deterministic once an endpoint is chosen.
@@ -73,7 +73,7 @@ data/raw/set2/2nd_test.rar                       existing immutable archive, out
 data/raw/extracted/ims_set2/run_01/             immutable extracted recordings, outside Git
 data/manifests/ims_set2/v1/                     tracked JSON/JSONL provenance manifests
 data/canonical/ims_set2/v1/                     ignored canonical parquet artifacts
-data/features/ims_set2/common_single_sensor_v1/ ignored feature artifacts
+data/features/ims_set2/common_sensor_view_v1/   ignored feature artifacts
 reports/data_validation/ims_set2/v1/            tracked validation reports
 reports/evaluation/ims_set2_external/v1/        future external-validation reports
 ```
@@ -92,11 +92,21 @@ unproven source object and is unnecessary.
 | Sensor observation | One channel in one recording | `(recording_id, sensor_id)` |
 | Physical trajectory | One physical bearing through one run | `(dataset_id, run_id, physical_bearing_id)` |
 | Bearing observation | One physical bearing at one recording time | `(trajectory_id, recording_id)` |
+| Sensor view | One sensor-local feature row for one bearing observation | `(bearing_observation_id, sensor_id, feature_contract_version)` |
 | Label | One label version applied to a bearing observation | `(bearing_observation_id, label_policy_version)` |
 | Feature artifact | One immutable output from one manifest/config/code state | `feature_artifact_id` |
 
 `trajectory_id` is the grouping key for all train/test boundaries. Sensor, axis,
-channel, timestamp, recording, and feature row are never independent trajectories.
+channel, timestamp, recording, and sensor view are never independent trajectories.
+
+Count these units separately in every manifest, training run, and evaluation report:
+
+- **trajectory count:** distinct physical `trajectory_id` values; this is the
+  independent-unit count and the fold/grouping denominator;
+- **timestamp count:** distinct `bearing_observation_id` values; this is the count of
+  physical-bearing observations over time;
+- **sensor-view count:** rows keyed by `(bearing_observation_id, sensor_id)`; this is
+  an observation representation count, never a count of independent bearings.
 
 ### 3.3 Deterministic identifiers
 
@@ -125,7 +135,7 @@ fields preserve the option to represent multiple operating episodes later.
 | Field group | Required fields | Provenance class |
 | --- | --- | --- |
 | Source | archive URI/hash, raw relative path/hash, source/license reference | Immutable fact/provenance |
-| Recording | source timestamp string, parsed local timestamp, timezone nullable, recording index, sample count, channel count, sampling rate | Fact plus deterministic derivation |
+| Recording | source timestamp string, parsed local timestamp, timezone nullable, recording index, sample count, channel count, sampling rate (`FS=20000` Hz) | Fact plus deterministic derivation |
 | Run | dataset ID, run ID, documented start/end, operating conditions nullable | Metadata fact or explicit unknown |
 | Sensor | sensor ID, source channel index, physical bearing ID, axis nullable, orientation nullable | Metadata fact; no inferred axis |
 | Trajectory | trajectory ID, physical bearing UID, first/last observation, observation count | Derived catalog |
@@ -135,52 +145,65 @@ fields preserve the option to represent multiple operating episodes later.
 
 ## 4. Sensor compatibility decision
 
-### 4.1 Selected v1 feature contract
+### 4.1 `common_sensor_view_v1` contract
 
-Create a **common single-sensor feature contract** for cross-dataset evaluation:
+Create a **scale-robust sensor-local** contract for cross-dataset evaluation. Each
+physical sensor produces one sensor-view row for each bearing timestamp; all sensor
+views retain the same `trajectory_id`, `bearing_observation_id`, and label. A sensor view
+is not a new trajectory and must never be split independently from its bearing.
 
-- each bearing has one explicitly designated primary sensor in the dataset config;
-- Set 2 uses its only sensor;
-- Set 1 uses the existing channel map's x/first channel per bearing (zero-based
-  channels 0, 2, 4, and 6) for the common contract; this choice is fixed before
-  examining labels or cross-set metrics;
-- Set 1's second sensor remains preserved in canonical sensor observations and may
-  support a separate Set-1-only feature family;
-- the common feature contract contains single-channel time/frequency base features
-  and causal per-trajectory temporal features only;
-- cross-axis max/min/range/mean features are excluded explicitly from the common
-  contract, with a compatibility report listing every excluded selected feature;
-- `axis`, `sensor_count`, missing-axis flags, dataset ID, and channel index are not
-  model inputs because they can act as direct dataset shortcuts.
+- Set 1 contributes both recorded sensor views for each bearing timestamp; Set 2
+  contributes its one available sensor view.
+- The contract contains only sensor-local time/frequency base features and causal
+  per-trajectory temporal features. Any fitted robust scaling, normalization, feature
+  selection, or imputation is fit on training trajectories only and applied without
+  validation/test statistics.
+- Cross-sensor max/min/range/mean features are excluded. `axis`, `sensor_count`,
+  missing-axis flags, dataset ID, and channel index are not model inputs because they
+  can become direct dataset shortcuts.
+- The contract is scale-robust, not orientation-invariant. Set 2 orientation remains
+  unknown, and cross-dataset orientation mismatch remains an explicit empirical risk.
+- Each bearing timestamp carries non-negative, configuration-versioned sensor weights
+  whose sum across its available sensor views is exactly one. The weights are part of
+  the feature/evaluation contract and are verified before fitting or scoring.
 
-Set 2's sensor orientation is not documented. Choosing Set 1 x/first channels does
-not assert orientation equivalence; it creates a deterministic no-peeking baseline.
-The v1 contract treats orientation mismatch as measured domain shift, not as solved
-equivalence.
+Training and evaluation use a hierarchy rather than raw sensor-view row counts:
+
+1. At each bearing timestamp, sensor-view losses or predictions are combined using the
+   configured weights, which sum to one.
+2. Timestamp-level contributions are normalized within each physical trajectory.
+3. Training objectives and aggregate evaluation metrics give equal total weight to each
+   trajectory. Reports show per-trajectory values before their equal-trajectory
+   aggregate.
+
+This prevents a dual-sensor Set 1 bearing from receiving twice the influence of a
+single-sensor Set 2 bearing while preserving each observed sensor view for diagnostics.
 
 ### 4.2 Feature families
 
 | Family | Purpose | Eligible data |
 | --- | --- | --- |
-| `common_single_sensor_v1` | Cross-set external evaluation and future pooling candidate | Set 1 designated primary sensor; Set 2 only sensor |
-| `set1_dual_sensor_v1` | Preserve existing Set 1 research and cross-axis analyses | Set 1 only |
+| `common_sensor_view_v1` | Cross-set external evaluation and future pooling candidate | All observed sensor views, grouped and weighted by physical trajectory/timestamp |
+| `set1_dual_sensor_v1` | Preserve Set 1 research and cross-sensor analyses | Set 1 only |
 | Existing selected-50 feature list | Historical leakage-safe comparison only | Set 1 only; not Set 2 compatible |
 
 Any future model comparing Set 1 and Set 2 must be retrained from scratch using
-`common_single_sensor_v1`, with feature selection and fitted preprocessing inside
+`common_sensor_view_v1`, with feature selection and fitted preprocessing inside
 training folds. The existing tuned model cannot be used for a valid Set 2 claim.
 
 ### 4.3 Rejected sensor options
 
 - **Invent a second Set 2 axis:** rejected because it fabricates measurements.
-- **Treat each Set 1 sensor as an independent training row:** rejected because it
-  duplicates labels from one physical trajectory and changes dataset weighting.
-- **Aggregate two Set 1 sensors versus one Set 2 sensor:** rejected for v1 because
-  variance/range features collapse to constants for Set 2 and expose dataset identity.
+- **Treat sensor views as independent trajectories:** rejected because they duplicate
+  labels from one physical bearing and invalidate validation grouping.
+- **Use unweighted sensor-view rows:** rejected because differing sensor counts would
+  change timestamp and trajectory influence.
+- **Aggregate raw sensors into cross-sensor features:** rejected because their
+  semantics differ between dual-sensor Set 1 and single-sensor Set 2.
 - **Silently drop incompatible features:** rejected; exclusions must be explicit in
   the feature-contract and compatibility reports.
-- **Dataset-specific models only:** retained as a possible diagnostic, but rejected
-  as the primary design because it cannot test cross-dataset generalization.
+- **Dataset-specific models only:** retained as a diagnostic, but rejected as the
+  primary design because it cannot test cross-dataset generalization.
 
 ## 5. Immutable intake and provenance
 
@@ -188,12 +211,29 @@ training folds. The existing tuned model cannot be used for a valid Set 2 claim.
 
 - Raw archive and extracted files remain outside Git under `data/raw/**`.
 - Open archive read-only and compute SHA-256 before every extraction attempt.
+- The sampling-rate fact for this contract is `FS=20000` Hz. The documented 20,480
+  value is the sample count per recording, not a 20.48 kHz sampling rate.
 - Record observed checksum, byte size, filesystem mtime, source URL/reference,
   acquisition method/date if known, license metadata, and who supplied the file.
 - An observed checksum proves later byte stability, not source authenticity. Absence
   of a publisher checksum remains visible in the manifest.
 
-### 5.2 Transactional extraction
+### 5.2 Permitted integrity checks and consumption boundary
+
+Before intake approval, permitted Set 2 checks are read-only archive access, byte-size
+and SHA-256 calculation, member listing, safe-path inspection, filename/timestamp
+parsing, and comparison against the versioned dataset specification. They may create
+only an audit record or manifest that identifies the archive by hash; they must not
+extract, alter, label, feature-engineer, train on, tune on, or evaluate on Set 2.
+
+Set 2 becomes **consumed** only when an approved execution extracts raw members, creates
+a persisted derived artifact, or supplies Set 2 observations to any feature, fitting,
+scoring, drift, or evaluation operation. At that first consumption point, the run must
+record the archive hash, manifest version, config hash, code revision, command, and
+output artifact identifier. A checksum or member-list inspection alone does not consume
+Set 2. Set 2 remains external-validation data before any pooling decision.
+
+### 5.3 Transactional extraction
 
 Extraction writes first to a unique sibling directory under
 `data/raw/extracted/ims_set2/.partial/<archive_sha256>/`. Record extraction tool,
@@ -208,7 +248,7 @@ Only after every raw-data gate passes may the directory be atomically renamed to
 - a rerun either verifies an existing successful extraction byte-for-byte and
   exits no-op, or starts in a new empty partial directory.
 
-### 5.3 Manifest set
+### 5.4 Manifest set
 
 | Manifest | Content |
 | --- | --- |
@@ -225,27 +265,31 @@ new version linked to the superseded version; they never edit a released manifes
 
 ## 6. Validation gates
 
-All hard gates must pass before Set 2 may move to the next layer. A failed hard gate
-returns a nonzero exit code, leaves raw sources untouched, and prevents publication
-of downstream manifests/artifacts.
+Hard invariants protect raw integrity, identity, label provenance, causal boundaries,
+and split isolation. A failed hard invariant returns a nonzero exit code, leaves raw
+sources untouched, and prevents publication of downstream artifacts. Empirical
+diagnostics measure orientation/scale differences, distribution drift, cadence
+irregularities that have documented provenance, and external-model behavior. They do
+not by themselves block canonical intake, but they block a claim of compatibility,
+pooling, or production readiness until reviewed.
 
 | ID | Input | Check | Pass condition | Failure behavior | Output |
 | --- | --- | --- | --- | --- | --- |
 | G01 | Archive path | Exists, regular file, readable without extraction | Readable archive at configured relative path | Stop intake | Archive gate record |
 | G02 | Archive bytes | SHA-256 and byte size | Match pinned observed checksum; authenticity status explicit | Stop on byte mismatch | `archive_manifest.json` |
 | G03 | Archive index | Member paths are safe | No absolute paths, `..`, links, devices, or path collisions | Stop; security finding | Archive member report |
-| G04 | Archive index | Recording count | Exactly 984 recording files | Stop | Count result |
-| G05 | Archive index | Filename format/uniqueness | All match `YYYY.MM.DD.HH.MM.SS`; 984 unique names | Stop | Filename report |
+| G04 | Archive index | Recording inventory | Matches the accepted immutable archive manifest; no unaccounted members | Stop | Count result |
+| G05 | Archive index | Filename format/uniqueness | All configured recording members parse once and have unique source names | Stop | Filename report |
 | G06 | Extracted files | Completeness against archive | Exact member set; no extra/missing files | Quarantine partial extraction | Extraction report |
 | G07 | Every recording | Numeric parsing | Entire file parses as finite numeric values | Stop; identify file/line without rewriting | Parse-failure report |
 | G08 | Every recording | Shape | Exactly 20,480 rows and 4 columns | Stop | Shape distribution report |
 | G09 | Dataset spec + files | Channel schema | Four channels and deterministic channel 1-4 to bearing 1-4 map | Stop | Sensor-map manifest |
 | G10 | Filenames | Timestamp parse | Every timestamp parses once as source-local time | Stop | Recording timestamp fields |
 | G11 | Sorted timestamps | Ordering/duplicates | Strictly increasing; no duplicate timestamps | Stop | Ordering report |
-| G12 | Timestamp deltas | Cadence/missing recordings | 983 deltas of exactly 600 seconds, or every deviation explicitly accepted | Stop on unexplained deviation | Cadence report |
-| G13 | File hashes | Duplicate payloads | No unexplained identical payload hash under different timestamps | Stop pending review | Duplicate-content report |
+| G12 | Timestamp deltas | Cadence/missing recordings | Report cadence and every deviation with provenance | Non-blocking diagnostic; blocks compatibility claims until reviewed | Cadence report |
+| G13 | File hashes | Duplicate payloads | Report identical payload hashes under different timestamps | Non-blocking diagnostic; blocks compatibility claims until reviewed | Duplicate-content report |
 | G14 | Canonical rows | Natural-key uniqueness | Unique recording, sensor-observation, trajectory, and bearing-observation keys | Stop | Key-integrity report |
-| G15 | Metadata + mapping | Physical trajectories | Exactly four trajectories; sensors never become trajectories | Stop | `trajectories_manifest.json` |
+| G15 | Metadata + mapping | Physical trajectories | Every configured bearing maps to one physical trajectory; sensors never become trajectories | Stop | `trajectories_manifest.json` |
 | G16 | Primary metadata | Failure-bearing mapping | Only bearing 1 has documented failure; mode is outer race | Stop on conflict | Event provenance record |
 | G17 | Metadata + final recording | Failure endpoint | Bearing 1 endpoint equals documented run end and last recording; evidence hash recorded | Stop; no RUL generated | Endpoint report |
 | G18 | Trajectories 2-4 | Censoring | Mark right-censored at last observation; RUL null for every row | Stop on ordinary RUL assignment | Label report |
@@ -253,13 +297,15 @@ of downstream manifests/artifacts.
 | G20 | Feature inputs | Future-information boundary | No failure time, terminal index, RUL, future sample, or future statistic is a feature | Stop | Feature lineage report |
 | G21 | Feature pipeline | Fold-local preprocessing | Fitted transforms/selection see training trajectories only; causal temporal history only | Stop model evaluation | Preprocessing audit |
 | G22 | Split assignments | Trajectory isolation | Zero trajectory overlap; all sensors/rows from a physical bearing remain in one fold | Stop | Split contamination report |
-| G23 | Common feature artifact | Contract compatibility | Required common features/dtypes present and finite; no cross-axis features or dataset identifiers | Stop | Compatibility report |
+| G23 | Common sensor-view artifact | Contract compatibility | Sensor-local features/dtypes present and finite; no cross-sensor features or dataset identifiers; sensor weights sum to one per bearing timestamp | Stop | Compatibility report |
 | G24 | Complete run | Determinism | Second run produces identical manifest/artifact hashes and performs no duplicate inserts | Stop release | Reproducibility report |
 | G25 | Manifests/reports | Provenance completeness | Source, config, code, tool, label, and artifact hashes all present | Stop release | `validation_summary.json` |
 
-Warnings may be used only for explicitly non-blocking metadata gaps such as unknown
-timezone. File count, schema, identity, endpoint, leakage, and split failures are
-always blocking.
+Hard invariants are G01-G11, G14-G25, except that cadence and duplicate-payload
+observations in G12-G13 are empirical diagnostics. Unknown timezone, source-authenticity
+gaps, sensor orientation, scale/orientation drift, and external-model performance are
+also non-blocking diagnostics for intake. None are silently accepted for compatibility,
+pooling, or production claims.
 
 ## 7. Label and censoring policy
 
@@ -295,16 +341,16 @@ immutable for comparison.
 | File | Responsibility | Inputs | Outputs/interfaces | Dependencies | Tests required |
 | --- | --- | --- | --- | --- | --- |
 | `configs/datasets/ims_set2.yaml` | Dataset facts, paths, checksum, expected schema, channel map, event metadata | Audit evidence | Versioned dataset spec loaded by all intake modules | YAML loader, path resolver | Schema validation; reject missing/unknown fields |
-| `configs/features/common_single_sensor_v1.yaml` | Shared feature names, Set-1 x/first-channel policy, causal lookbacks, forbidden fields | Feature compatibility decision | Immutable contract hash | Existing feature functions | Contract snapshot, exact primary-channel map, and forbidden-feature tests |
+| `configs/features/common_sensor_view_v1.yaml` | Sensor-local feature names, causal lookbacks, weight policy, forbidden fields | Feature compatibility decision | Immutable contract hash | Existing feature functions | Contract snapshot, timestamp weight-sum and forbidden-feature tests |
 | `src/data/ims_schema.py` | Typed canonical records, enums, validation, deterministic ID helpers | Dataset spec/manifest rows | Pure Python schemas and SHA-256 ID functions | Standard library plus existing project dependencies | ID stability, collision-input separation, enum/null rules |
 | `src/data/ims_manifest.py` | Read-only archive inventory, hashes, manifests, provenance | Archive/config | Manifest objects and JSON/JSONL writers | `ims_schema` | Deterministic ordering/hashes, unsafe path rejection, duplicate detection |
 | `src/data/ims_ingest.py` | CLI orchestration for inventory, transactional extract, canonicalize; no modeling | Config/manifests/raw paths | Commands with nonzero gate failures; `_SUCCESS.json` only after acceptance | Manifest, validator, canonicalizer | No-op rerun, partial failure, no overwrite, temp-path cleanup policy |
 | `src/data/ims_validate.py` | Implement G01-G25 as composable pure checks where possible | Config, archive index, canonical tables, split assignments | Machine-readable gate results and Markdown summary | Schema/manifest modules | One focused unit test per hard gate plus aggregate failure status |
-| `src/data/ims_canonical.py` | Map recordings/channels to sensor and bearing observations | Validated raw recordings and sensor map | Canonical recording/sensor/bearing tables | `ims_schema` | Four trajectories, 984 recordings, 3,936 bearing observations, unique keys |
+| `src/data/ims_canonical.py` | Map recordings/channels to sensor and bearing observations | Validated raw recordings and sensor map | Canonical recording/sensor/bearing tables | `ims_schema` | Natural-key uniqueness and sensor-to-physical-trajectory grouping |
 | `src/data/ims_labels.py` | Dataset-aware failure/censoring/RUL generation | Canonical observations and event metadata | Versioned labels manifest/artifact | `ims_schema` | Bearing 1 monotonic RUL/final zero; bearings 2-4 null RUL/censored |
 | `src/features/ims_feature_contract.py` | Resolve compatible features and exclusions | Feature contract and canonical sensor metadata | Feature schema/hash and compatibility report | Existing preprocessing functions | Reject axis/dataset/forbidden fields; explicit exclusion list |
-| `src/features/extract_ims_features.py` | Single-channel base and causal temporal extraction | Validated sensor observations + contract | One bearing-level row per trajectory/recording | `src/preprocess.py`; fold-aware temporal helpers | Golden synthetic signals, causal-prefix invariance, row/key counts |
-| `src/models/offline_validation.py` | Later add canonical trajectory IDs and external-domain mode | Frozen Set 1 model/preprocessor and Set 2 common features | Set 1 LOBO plus Set 2 external reports | Existing validation metrics | Zero trajectory overlap, train-only fitting, dataset holdout |
+| `src/features/extract_ims_features.py` | Sensor-local base and causal temporal extraction | Validated sensor observations + contract | One sensor-view row per bearing timestamp/sensor | `src/preprocess.py`; fold-aware temporal helpers | Golden synthetic signals, causal-prefix invariance, weight/key checks |
+| `src/models/offline_validation.py` | Later add canonical trajectory IDs, hierarchical weighting, and external-domain mode | Frozen Set 1 model/preprocessor and Set 2 common features | Set 1 LOBO plus Set 2 external reports | Existing validation metrics | Zero trajectory overlap, train-only fitting, timestamp and equal-trajectory aggregation |
 | `tests/fixtures/ims/` | Tiny synthetic four-channel archive/file fixtures; never real IMS data | Test builders | Deterministic safe/corrupt/missing/duplicate fixtures | Test suite only | Fixture checksum assertions |
 | `tests/unit/test_ims_schema.py` | Pure schema/identifier behavior | Synthetic rows | Unit results | `ims_schema` | Deterministic IDs and label nullability |
 | `tests/unit/test_ims_manifest.py` | Archive and manifest behavior | Synthetic archive index | Unit results | `ims_manifest` | Path safety, hashes, ordering, duplicate members |
@@ -329,9 +375,9 @@ then decide whether to migrate Set 1.
 | 0. Human Git checkpoint | Existing dirty worktree only | Approved logical commits; PostgreSQL runtime excluded; clean/known baseline | No approval or unresolved overlapping edits | No Git write; retain current tree |
 | 1. Config/schema/manifest inventory | Dataset/feature YAML, `ims_schema.py`, `ims_manifest.py`, unit tests | Read-only archive inventory; deterministic IDs/hash; G01-G05 pass | Checksum/count/path/schema conflict | Remove new code/manifests; archive untouched |
 | 2. Transactional immutable extraction | `ims_ingest.py`, extraction tests, runbook draft | G03-G08 pass; atomic publish; forced partial-failure test passes | Any unsafe member, parse/shape/count failure | Delete only failed partial directory after review; archive untouched |
-| 3. Canonical mapping | `ims_canonical.py`, mapping config/tests | 984 recordings, 3,936 bearing observations, four trajectories, unique natural keys | Ambiguous channel map or duplicate keys | Discard versioned canonical output; keep raw/manifests |
+| 3. Canonical mapping | `ims_canonical.py`, mapping config/tests | Validated recording/sensor/bearing mapping with unique natural keys | Ambiguous channel map or duplicate keys | Discard versioned canonical output; keep raw/manifests |
 | 4. Label/censoring | `ims_labels.py`, label tests/manifests | Bearing 1 endpoint/RUL gates pass; 2-4 censored with null RUL | Endpoint provenance conflict or nonmonotonic RUL | Supersede label version; never alter raw/canonical facts |
-| 5. Common base features | Feature contract/extractor/tests | Explicit excluded-feature report; causal prefix tests; one row per bearing/recording | Incompatible feature semantics or future dependency | Discard feature artifact/version; retain canonical data |
+| 5. Common sensor-view features | Feature contract/extractor/tests | Explicit excluded-feature report; causal-prefix tests; one sensor-view row per bearing timestamp/sensor; weights sum to one per timestamp | Incompatible feature semantics or future dependency | Discard feature artifact/version; retain canonical data |
 | 6. Intake release | G01-G25 reports/manifests; runbook | Deterministic rerun; all hard gates pass; artifact hashes stable; ruff/pytest pass | Any hard gate or reproducibility failure | Do not publish `_SUCCESS`; prior versions remain current |
 | 7. External validation integration | `offline_validation.py`, evaluation tests/reports | Freeze Set 1-only compatible model/preprocessor; Set 2 never used in fit/tuning; per-domain/worst-fold/drift metrics | Any Set 2-informed model selection or split overlap | Delete only new evaluation outputs; intake remains valid |
 | 8. Pooling decision | New ADR/report only first | Human review of external performance/drift and business metrics | Evidence weak, shortcuts detected, or only aggregate improvement | Keep Set 2 external-only |
@@ -343,14 +389,16 @@ work around an earlier failure.
 
 Set 2 **intake** is complete only when all of the following are true:
 
-1. archive bytes are unchanged and linked to complete source/license provenance;
+1. archive bytes are unchanged, and source/license status plus any gaps are recorded;
 2. G01-G25 pass, with any allowed warnings explicitly listed;
-3. exactly 984 unique recordings parse as 20,480 by 4 finite numeric arrays;
-4. exactly four physical trajectories and 3,936 bearing observations exist;
-5. no sensor/channel is represented as an independent trajectory;
+3. every accepted recording conforms to the dataset specification, including 20,480
+   samples, four channels, and `FS=20000` Hz;
+4. configured physical trajectories and bearing observations have unique natural keys;
+5. no sensor/channel is represented as an independent trajectory, and sensor-view
+   weights sum to one per bearing timestamp;
 6. bearing 1 has metadata-supported outer-race failure labels ending at RUL 0;
 7. bearings 2-4 are right-censored with null RUL;
-8. common features contain no cross-axis or dataset-identity shortcuts and use only
+8. common sensor-view features contain no cross-sensor or dataset-identity shortcuts and use only
    causal history;
 9. manifests include full input/config/code/tool/label/artifact provenance;
 10. a second run is a verified no-op and produces identical hashes;
@@ -364,8 +412,8 @@ evaluation is the next, separate evidence phase.
 
 ### Before pooling
 
-1. Build `common_single_sensor_v1` for Set 1 using only its designated primary
-   sensor per bearing.
+1. Build `common_sensor_view_v1` for Set 1 using all recorded sensor views, grouped
+   by physical trajectory and weighted per bearing timestamp.
 2. Run leakage-safe Set 1 LOBO with all feature selection and fitted preprocessing
    inside each fold.
 3. Fit one final Set-1-only common-contract model after its design is frozen.
@@ -423,7 +471,7 @@ specific failure metadata. No Set 3 download is authorized by this design.
 
 | Risk | Control |
 | --- | --- |
-| Archive is stable locally but not provenance-authenticated | Distinguish observed checksum from publisher checksum; block release on missing required source/license approval |
+| Archive is stable locally but not provenance-authenticated | Distinguish observed checksum from publisher checksum; require applicable approval before external release |
 | Unknown Set 2 sensor orientation | Null orientation; use axis-agnostic features; report domain drift |
 | Existing Set 1 selected features are incompatible | New explicit common contract; preserve old validation as historical evidence |
 | External result influences model selection | Freeze Set 1 model/config/artifact ID before Set 2 labels are evaluated |
@@ -445,7 +493,7 @@ alias. No rollback operation may delete an earlier accepted manifest or report.
 ## 14. Terra implementation brief
 
 Implement Set 2 intake only after the human-approved Git checkpoint. Start with
-`configs/datasets/ims_set2.yaml`, `configs/features/common_single_sensor_v1.yaml`,
+`configs/datasets/ims_set2.yaml`, `configs/features/common_sensor_view_v1.yaml`,
 `src/data/ims_schema.py`, `src/data/ims_manifest.py`, and their unit tests. Inventory
 the existing RAR read-only and implement G01-G05 before writing extraction logic.
 
@@ -456,8 +504,9 @@ tables with grouping key `(dataset_id, run_id, physical_bearing_id)`. Set 2 chan
 
 Label bearing 1 as metadata-supported outer-race failure at the verified final
 timestamp. Mark bearings 2-4 right-censored with null RUL. Generate
-`common_single_sensor_v1` features without cross-axis or dataset-identity fields and
-prove causal-prefix/fold-local behavior in tests.
+`common_sensor_view_v1` features without cross-sensor or dataset-identity fields,
+enforce timestamp weight sums and equal-trajectory aggregation, and prove
+causal-prefix/fold-local behavior in tests.
 
 Stop after deterministic intake and feature artifacts pass G01-G25. Do not train,
 tune, pool datasets, update serving artifacts, download Set 3, or revise business

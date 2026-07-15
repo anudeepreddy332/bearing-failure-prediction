@@ -510,6 +510,57 @@ Set-3 download, Git integration, or any production claim.
 
 ---
 
+### D-027 — Supersede the primary-sensor contract with weighted sensor views
+**Decision:** Partially supersede D-026's common single-sensor feature-contract choice
+with `common_sensor_view_v1`. D-026 remains the historical record for immutable,
+external-before-pooling Set 2 intake. The new contract represents one observed sensor
+as one sensor-view row for each physical bearing timestamp. Sensor views share one
+`trajectory_id`; they are not independent trajectories, folds, or bearing counts.
+Every bearing timestamp has configuration-versioned, non-negative sensor weights that
+sum to one across its available sensor views.
+
+**Training and evaluation policy:** First aggregate sensor-view predictions or losses
+at each timestamp using those weights. Then normalize timestamp contributions within a
+physical trajectory and give each trajectory equal total weight in objectives and
+aggregate metrics. Reports must distinguish trajectory count, timestamp count, and
+sensor-view count, and must show per-trajectory results before equal-trajectory
+aggregation. Fitted preprocessing and feature selection remain training-fold-local.
+
+**Feature-contract policy:** `common_sensor_view_v1` is scale-robust and sensor-local:
+it permits causal single-sensor features and training-fold-local robust scaling, while
+excluding cross-sensor aggregates and dataset/channel/axis identity inputs. This does
+not solve orientation mismatch. Set 2 orientation stays unknown and is retained as an
+explicit empirical risk. The sampling-rate fact is `FS=20000` Hz; 20,480 refers to
+samples per recording, not a sampling frequency.
+
+**Integrity and consumption boundary:** Read-only archive hash, size, member-list,
+safe-path, and manifest checks are permitted before consumption. Set 2 becomes consumed
+when approved execution extracts raw members, creates a persisted derived artifact, or
+uses Set 2 observations in feature extraction, fitting, scoring, drift analysis, or
+evaluation; that run must record archive, manifest, config, code, command, and output
+provenance. Set 2 remains external-validation data before any later pooling ADR.
+
+**Hard invariants versus diagnostics:** Raw-byte integrity, safe member paths,
+canonical identity, label provenance, causal/fold-local preprocessing, trajectory
+isolation, contract exclusions, and timestamp weight sums are blocking invariants.
+Timezone/source-authenticity gaps, cadence observations with provenance, orientation,
+scale/distribution drift, and external-model behavior are non-blocking intake
+diagnostics but block compatibility, pooling, and production claims until reviewed.
+
+**Why:** Selecting Set 1's first sensor discarded an observed view without proving that
+it was representative. Treating both sensors as ordinary unweighted rows would instead
+overweight dual-sensor trajectories relative to Set 2. Weighted sensor views preserve
+the observed measurements while keeping the physical trajectory as the independent
+unit required by leakage-safe validation.
+
+**Rejected alternatives:** Retaining a designated primary sensor, treating each sensor
+view as a separate trajectory, unweighted row-level training/evaluation, raw
+cross-sensor aggregation, orientation assumptions, and Set-2-informed model selection
+were rejected. This decision does not authorize extraction, feature generation,
+training, tuning, serving changes, pooling, or changes to old reports.
+
+---
+
 ## Log format for future entries
 
 ```
