@@ -58,8 +58,8 @@ ax1.text(0.97, 0.05,
          bbox=dict(boxstyle='round,pad=0.8', facecolor='#2c3e50', alpha=0.95,
                    edgecolor='#e74c3c', linewidth=2.5))
 
-# RIGHT: Stratified split (GOOD)
-ax2.set_title('✅ Stratified RUL Split (Success)', fontsize=15, color='#2ecc71',
+# RIGHT: Stratified split (DEPRECATED)
+ax2.set_title('⚠️ Row-Level Stratified Split (Leaky Baseline)', fontsize=15, color='#f39c12',
               fontweight='bold', pad=15)
 
 # Both distributions cover all RUL ranges
@@ -88,11 +88,11 @@ ax2.set_facecolor('#0d0d0d')
 
 # Info box positioned carefully
 ax2.text(0.97, 0.05,
-         'Both sets contain examples\nfrom ALL RUL ranges:\n\n[0-50h], [50-100h],\n[100-150h], [150+h]\n\nResult: R² = 0.9852\n(PERFECT!)',
+         'Both sets contain examples\nfrom ALL RUL ranges,\nbut rows share bearings\nand nearby timestamps.\n\nLeakage-safe baseline:\nR² = 0.9796\n(NOT production evidence)',
          transform=ax2.transAxes, fontsize=10, verticalalignment='bottom',
          horizontalalignment='right',
          bbox=dict(boxstyle='round,pad=0.8', facecolor='#2c3e50', alpha=0.95,
-                   edgecolor='#2ecc71', linewidth=2.5))
+                   edgecolor='#f39c12', linewidth=2.5))
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
 output_path = OUTPUT_DIR / 'train_test_split_comparison.png'
@@ -107,21 +107,21 @@ print(f"✓ Created: {output_path}")
 
 fig, ax = plt.subplots(figsize=(15, 8))
 fig.patch.set_facecolor('#1a1a1a')
-fig.suptitle('Impact of Weighted Loss Function', fontsize=22, fontweight='bold', y=0.97)
+fig.suptitle('Leakage-Safe Validation Changed the Story', fontsize=22, fontweight='bold', y=0.97)
 
 # Data
-rul_ranges = ['0-50h\n(Critical)', '50-100h\n(Warning)', '100-150h\n(Alert)',
-              '150-200h', '200-300h', '300+h']
-mae_before = [30.2, 18.5, 15.3, 20.1, 18.7, 16.2]
-mae_after = [2.88, 4.77, 10.77, 18.19, 16.42, 13.47]
+rul_ranges = ['Leaky\nBaseline', 'LOBO', 'Purged\nTime-Series',
+              'Critical\nBaseline', 'Critical\nLOBO', 'Critical\nPurged']
+mae_before = [10.91, 222.91, 127.43, 2.50, 79.82, 77.85]
+mae_after = [20.14, 226.46, 122.00, 4.32, 82.54, 78.47]
 
 x = np.arange(len(rul_ranges))
 width = 0.35
 
 # Bars
-bars1 = ax.bar(x - width/2, mae_before, width, label='Before (Standard Loss)',
+bars1 = ax.bar(x - width/2, mae_before, width, label='Phase 1 precomputed features',
                color='#e74c3c', edgecolor='white', linewidth=1.2, alpha=0.9)
-bars2 = ax.bar(x + width/2, mae_after, width, label='After (Weighted Loss)',
+bars2 = ax.bar(x + width/2, mae_after, width, label='Leakage-safe preprocessing',
                color='#2ecc71', edgecolor='white', linewidth=1.2, alpha=0.9)
 
 # Add value labels on bars
@@ -132,9 +132,9 @@ for bars in [bars1, bars2]:
                 f'{height:.1f}h',
                 ha='center', va='bottom', fontsize=10, fontweight='bold', color='white')
 
-ax.set_xlabel('RUL Range', fontsize=14, fontweight='bold')
+ax.set_xlabel('Validation Strategy / Metric', fontsize=14, fontweight='bold')
 ax.set_ylabel('Mean Absolute Error (hours)', fontsize=14, fontweight='bold')
-ax.set_title('Weighted Loss Penalizes Critical Zone Errors 10x More',
+ax.set_title('The old attractive metrics were not production evidence',
              fontsize=13, style='italic', pad=20, color='#ecf0f1')
 ax.set_xticks(x)
 ax.set_xticklabels(rul_ranges, fontsize=11)
@@ -147,8 +147,8 @@ ax.axvspan(-0.5, 0.5, alpha=0.15, color='red', zorder=0)
 
 # Add improvement annotations - positioned to avoid overlap
 improvements = [
-    (0, '10x better!', 28),
-    (1, '4x better', 17),
+    (0, 'baseline still leaky', 30),
+    (1, 'unseen bearing fails', 225),
 ]
 for idx, text, y_pos in improvements:
     ax.annotate(text, xy=(idx, y_pos), xytext=(idx, y_pos + 4),
@@ -159,7 +159,7 @@ for idx, text, y_pos in improvements:
                 arrowprops=dict(arrowstyle='->', color='#f39c12', lw=2))
 
 # Set y-axis limit to give space
-ax.set_ylim(0, 38)
+ax.set_ylim(0, 260)
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 output_path = OUTPUT_DIR / 'weighted_loss_impact.png'
@@ -178,7 +178,7 @@ ax = fig.add_axes([0, 0, 1, 1])
 ax.axis('off')
 
 # Title with more breathing room
-fig.text(0.5, 0.94, 'Model Performance: Before vs After Optimization',
+fig.text(0.5, 0.94, 'Model Performance: Old Claim vs Leakage-Safe Evidence',
          ha='center', fontsize=24, fontweight='bold', color='white')
 
 # Create two boxes for before/after with better spacing
@@ -197,7 +197,7 @@ ax.add_patch(before_rect)
 
 fig.text(left_box_x + box_width/2, 0.86, '❌ BEFORE',
          ha='center', fontsize=20, fontweight='bold', color='#e74c3c')
-fig.text(left_box_x + box_width/2, 0.825, '(Baseline Model)',
+fig.text(left_box_x + box_width/2, 0.825, '(Old README claim)',
          ha='center', fontsize=11, style='italic', color='#95a5a6')
 
 # Before metrics with better spacing
@@ -207,7 +207,7 @@ before_metrics = [
     ('Test R²', '-14.58', '#e74c3c'),
     ('Production Ready?', 'NO', '#e74c3c'),
     ('Split Strategy', 'Time-based', '#e74c3c'),
-    ('Loss Function', 'Standard MAE', '#e74c3c'),
+    ('Use as claim?', 'Deprecated', '#e74c3c'),
 ]
 
 y_pos = 0.75
@@ -225,19 +225,19 @@ after_rect = mpatches.FancyBboxPatch((right_box_x, box_y), box_width, box_height
                                       linewidth=3.5, transform=fig.transFigure)
 ax.add_patch(after_rect)
 
-fig.text(right_box_x + box_width/2, 0.86, '✅ AFTER',
+fig.text(right_box_x + box_width/2, 0.86, '✅ CURRENT',
          ha='center', fontsize=20, fontweight='bold', color='#2ecc71')
-fig.text(right_box_x + box_width/2, 0.825, '(Optimized Model)',
+fig.text(right_box_x + box_width/2, 0.825, '(Leakage-safe validation)',
          ha='center', fontsize=11, style='italic', color='#95a5a6')
 
 # After metrics with better spacing
 after_metrics = [
-    ('Critical Zone MAE (0-50h)', '2.88 hours', '#2ecc71'),
-    ('Overall MAE', '13.42 hours', '#2ecc71'),
-    ('Test R²', '0.9852', '#2ecc71'),
-    ('Production Ready?', 'YES!', '#2ecc71'),
-    ('Split Strategy', 'Stratified by RUL', '#2ecc71'),
-    ('Loss Function', 'Weighted MAE', '#2ecc71'),
+    ('LOBO MAE', '226.46 hours', '#f39c12'),
+    ('Purged CV MAE', '122.00 hours', '#f39c12'),
+    ('Leaky baseline R²', '0.9796', '#f39c12'),
+    ('Production Ready?', 'NO', '#e74c3c'),
+    ('Split Strategy', 'LOBO + purged CV', '#2ecc71'),
+    ('Use as claim?', 'Source of truth', '#2ecc71'),
 ]
 
 y_pos = 0.75
@@ -257,7 +257,7 @@ arrow = mpatches.FancyArrowPatch((left_box_x + box_width + 0.015, 0.50),
 ax.add_patch(arrow)
 
 # Key improvements text - positioned lower with padding
-fig.text(0.5, 0.06, 'Key Improvements: Stratified Sampling + Weighted Loss + Optuna Tuning',
+fig.text(0.5, 0.06, 'Key Correction: old production metrics removed; leakage-safe validation is source of truth',
          ha='center', fontsize=13, fontweight='bold', color='#f39c12',
          bbox=dict(boxstyle='round,pad=0.8', facecolor='#2c3e50',
                    edgecolor='#f39c12', linewidth=2.5, alpha=0.95))

@@ -350,6 +350,58 @@ thin.
 
 ---
 
+### D-022 — Public project claims now use leakage-safe validation, not old leaky metrics
+**Decision:** Corrected README, production-readiness docs, design-review docs, dashboard
+copy, and case-study image-generation text so they no longer present the old `2.88h`
+critical-zone MAE, `13.42h` overall MAE, `R2 = 0.9852`, or production-grade framing as
+valid project claims. The source-of-truth validation is now
+`reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
+**Why:** Phase 1 showed the old row-level stratified split leaked temporally adjacent
+samples, and D-021 showed precomputed temporal/z-score features added preprocessing
+leakage risk. Keeping the old README/dashboard claims would mislead reviewers and future
+maintainers about model readiness.
+**Evidence used:** Leakage-safe summary metrics: current row-level baseline MAE 20.14h
+and critical-zone MAE 4.32h, but still contaminated by same-bearing timestamp overlap;
+LOBO MAE 226.46h and critical-zone MAE 82.54h; purged time-series MAE 122.00h and
+critical-zone MAE 78.47h. These are much weaker than the old public claims and do not
+support production readiness.
+**Rejected alternatives:** Leaving old metrics in place with a footnote was rejected
+because the top-level README and dashboard would still communicate the wrong conclusion.
+Deleting old reports was rejected because they are needed for reproducible before/after
+leakage comparison.
+**Remaining risks:** External portfolio images/pages generated before this correction may
+still contain stale claims until regenerated. The code still contains the old model
+artifact and prototype API/dashboard behavior; only displayed claims were corrected in
+this step.
+
+---
+
+### D-023 — Future retuning must optimize a business-aligned leakage-safe objective
+**Decision:** Added `docs/EVALUATION_POLICY.md` as the required model-selection policy
+for future retuning. Primary objective is leakage-safe LOBO business-risk score, with
+purged time-series CV as a required secondary guard. The row-level baseline remains
+diagnostic only and must not be used for model selection.
+**Why:** The project now has honest validation, but tuning against generic MAE would still
+miss the maintenance decision problem. Near-failure warning quality matters more than
+average error across all RUL ranges. A model that lowers overall MAE while missing critical
+low-RUL samples would be business-worse, not better.
+**Evidence used:** Leakage-safe Phase 1 metrics show LOBO MAE 226.46h and critical-zone
+MAE 82.54h, with one LOBO fold missing most critical warnings. Existing validation uses
+RUL <= 50h as critical and RUL <= 100h as warning; these thresholds are documented as
+provisional because no maintenance cost matrix, required lead time, or SME sign-off exists
+in the repository.
+**Rejected alternatives:** Optimizing only overall MAE was rejected because it is not
+aligned with maintenance decisions. Making purged CV the sole objective was rejected
+because it tests known-asset monitoring, not unseen-bearing generalization. Hard-coding
+production-grade thresholds was rejected because the current 50h/100h thresholds are
+repo conventions, not business-validated requirements.
+**Remaining risks:** The scalar business-risk weights are provisional. Lead-time metrics
+are feasible from the time-ordered labels but are not yet emitted by the Phase 1 validation
+CSV outputs. Set 1 still has only two failed physical bearings, so even a better LOBO score
+will remain statistically thin until Sets 2/3 are ingested.
+
+---
+
 ## Log format for future entries
 
 ```
