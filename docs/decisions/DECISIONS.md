@@ -561,6 +561,33 @@ training, tuning, serving changes, pooling, or changes to old reports.
 
 ---
 
+### D-028 — Align repository agent guidance with leakage-safe evidence
+**Decision:** Replaced the stale `AGENTS.md` operational guidance. It now identifies
+the repository as not production-ready, directs agents to D-021 through D-027 and the
+leakage-safe reports, distinguishes the historical Postgres train/serve path from the
+DB-free offline validation path, records the current 31-test scope, and states the
+Set 2 `common_sensor_view_v1` boundary without authorizing implementation.
+**Why:** The untracked prior guidance said the repository shipped a production model
+with a 2.88h critical-zone MAE, endorsed the row-stratified workflow as the active model
+path, and reported only 24 tests. An agent following those claims could make invalid
+generalization or deployment decisions, retune against a leaky split, or begin Set 2
+work without the approved integrity and consumption gates.
+**Evidence used:** D-021 through D-027; `docs/EVALUATION_POLICY.md`; the leakage-safe
+Phase 1 report (row baseline about 20.14h MAE, LOBO about 226.46h, purged time-series
+CV about 122.00h); the two complete failed Set 1 trajectories (bearings 3 and 4);
+current code in `src/data/split_stratified.py`, `src/models/offline_validation.py`,
+`pyproject.toml`, `docker-compose.yml`, `src/config.py`, and the API/dashboard paths;
+and current collection of 31 focused tests.
+**Superseded guidance:** The old 2.88h headline, any production/generalization framing,
+and any implication that `split_stratified.py` validates generalization are superseded.
+This does not alter historical artifacts or create a new model-performance result.
+**Remaining limitations:** Legacy Postgres/API/dashboard paths remain largely untested
+end-to-end and still point at the historical tuned artifact. Set 1 has only two failed
+trajectories. Set 2 remains external-before-pooling, documentation-approved only, with
+implementation requiring separate authorization and the D-027/design-document gates.
+
+---
+
 ## Log format for future entries
 
 ```
