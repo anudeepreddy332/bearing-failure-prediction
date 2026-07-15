@@ -402,6 +402,31 @@ will remain statistically thin until Sets 2/3 are ingested.
 
 ---
 
+### D-024 — Diagnose leakage-safe generalization failure before retuning
+**Decision:** Added an offline root-cause analysis pass under
+`reports/evaluation/root_cause_analysis/` and a focused diagnostic script at
+`src/models/root_cause_analysis.py`. This investigation reuses the leakage-safe Phase 1
+validation frame, preserves all previous reports, and retrains only the existing fixed
+LightGBM configuration inside diagnostic LOBO folds to inspect train/test gaps,
+feature-distribution drift, feature-importance stability, residuals, calibration,
+learning curves, label checks, and selected-feature predictiveness.
+**Why:** Leakage-safe validation invalidated the old production-grade claims, but
+retuning immediately would optimize before understanding the failure mode. The highest
+value next step is evidence: determine whether the poor LOBO/purged results are driven
+by data limitations, bearing distribution shift, unstable features, label assumptions,
+overfit from the leaky regime, or a mismatch between validation design and deployment
+reality.
+**Rejected alternative(s):** Immediate model/hyperparameter retuning was rejected because
+it would hide root causes and could overfit Set 1 again. Trying new model families was
+rejected because this phase is diagnosis, not optimization. Overwriting Phase 1 outputs
+was rejected because the audit trail needs stable before/after validation artifacts.
+**Remaining risks:** This diagnostic still has only two failed physical bearings, so
+some conclusions are high-confidence blockers but low-sample statistically. Hyperparameter
+effects remain inconclusive until a separate leakage-safe retuning study is run under
+`docs/EVALUATION_POLICY.md`.
+
+---
+
 ## Log format for future entries
 
 ```

@@ -1,0 +1,9 @@
+bearing,axis,failed,censored,samples,timestamps,rul_min,rul_max,rul_missing
+1,x,False,True,2156,2156,,,2156
+1,y,False,True,2156,2156,,,2156
+2,x,False,True,2156,2156,,,2156
+2,y,False,True,2156,2156,,,2156
+3,x,True,False,2156,2156,0.0,827.5588888888889,0
+3,y,True,False,2156,2156,0.0,827.5588888888889,0
+4,x,True,False,2156,2156,0.0,827.5588888888889,0
+4,y,True,False,2156,2156,0.0,827.5588888888889,0
