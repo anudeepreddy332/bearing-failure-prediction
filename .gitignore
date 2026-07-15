@@ -54,6 +54,7 @@ models/*.joblib
 *.db
 *.sqlite
 *.sqlite3
+data/postgres/
 
 # Environment Variables
 .env
