@@ -652,6 +652,37 @@ pooling. The local source-authenticity and timestamp-timezone provenance gaps re
 
 ---
 
+### D-031 — Authorize Set 1 Phase B raw validation and canonical physical identity only
+**Decision:** Authorize a DB-free Phase B implementation that pins the Phase A Set 1
+specification and 2,156-recording manifest, validates each raw recording through a
+stable no-follow snapshot, and publishes deterministic canonical identity artifacts.
+The canonical graph contains one dataset, one run/source snapshot, 2,156 recordings,
+four physical bearing trajectories, eight sensor streams, 8,624 bearing observations,
+17,248 sensor observations, and 2,156 recording-validation rows. Channels 0/1, 2/3,
+4/5, and 6/7 are children of physical bearings 1–4 respectively. `x`/`y` remains only
+the project channel-order convention; physical orientation is explicitly unverified.
+**Why:** Phase A proves the registered Set 1 member set and source bytes, but it does
+not prove the raw ASCII schema or provide canonical physical identities. Treating
+channels as trajectories would violate the physical grouping required by the approved
+evaluation boundary. Phase B must establish raw-shape and foreign-key truth before any
+future canonicalization-dependent work can be considered.
+**Hard gates:** Each registered input must match its path, byte size, SHA-256, exact
+20,480 non-empty rows, eight finite numeric columns, and expected cardinality. Canonical
+keys, foreign keys, schema purity, atomic output, and exact no-op comparison are also
+blocking. Cadence, file sizes, extrema, constant channels, repeated content, source
+authenticity, timezone, hardware identity, and physical orientation are diagnostics;
+they are recorded without invented acceptance thresholds.
+**Scope boundary:** This authorizes raw validation and canonical identity records only.
+It does not authorize labels, signal windowing, feature extraction, sensor views,
+splits, evaluation, training, tuning, Postgres, API/dashboard changes, serving, Set 2
+extraction, Set 2 implementation, or Set 2 pooling. No model-performance conclusion is
+created by this decision.
+**Remaining limitations:** Publisher authenticity, timezone, hardware identity, and
+physical x/y orientation are not established by repository evidence. The Phase A local
+copy remains unauthenticated to the publisher even if Phase B integrity gates pass.
+
+---
+
 ## Log format for future entries
 
 ```
