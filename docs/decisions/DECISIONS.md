@@ -620,6 +620,38 @@ gates plus human authorization.
 
 ---
 
+### D-030 — Harden the Set 1 source-manifest identity and no-op contract
+**Decision:** Phase A source registration now emits two explicitly named dataset-spec
+hashes: `dataset_spec_file_sha256` is the SHA-256 of the exact committed JSON bytes;
+`dataset_spec_semantic_json_sha256` is the SHA-256 of canonicalized parsed JSON. The
+ambiguous `config_sha256` field is superseded. Registration validates the dataset spec
+as an exact JSON object, reads each raw recording through one no-follow descriptor,
+and rejects a source file that changes or is replaced before, during, or after hashing.
+Existing output is a no-op only when it contains exactly the two expected regular files
+with byte-identical deterministic content; extra members, directories, symlinks,
+devices, missing artifacts, and changed artifact bytes are errors. A one-time explicit
+summary-contract upgrade may replace only the legacy summary after strict verification
+that the recording manifest is byte-identical; ordinary reruns remain no-ops.
+**Why:** The initial Phase A report conflated the exact dataset-spec byte hash
+`7ed18f7585c65c2012caa543c80107d137d3727ff06b842c430f2d5c62b70181` with the
+semantic JSON hash `102fe1268242e4c4c0234203ded2554178a2f9d8b5206ca631ae466745c0e5af`.
+It also did not prove that raw-file size and hash came from the same stable snapshot or
+that a pre-existing output directory was free of unrecognized or link-followed files.
+Those ambiguities weaken source identity and cold-clone reproducibility claims.
+**Evidence used:** Review findings against `src/data/set1_manifest.py`, the committed
+Set 1 dataset spec, and the existing v1 artifacts. The recording manifest SHA-256 is
+preserved as `f93e2f381ebeaf95d617ba1fe40c2d8ab24ca0c50f4c6887b435f30c5c960176`.
+Focused synthetic tests cover schema rejection, CLI error exit, snapshot mutation or
+replacement detection, symlink/extra-member/different-byte rejection, deterministic
+reruns, and the controlled summary migration.
+**Scope boundary and remaining limitations:** This is Phase A contract hardening only.
+It neither authenticates the local raw copy to a publisher nor parses signals beyond
+declared metadata. It does not authorize Phase B canonicalization, labels, features,
+splits, evaluation, training, retuning, serving changes, Set 2 extraction, or Set 2
+pooling. The local source-authenticity and timestamp-timezone provenance gaps remain.
+
+---
+
 ## Log format for future entries
 
 ```
