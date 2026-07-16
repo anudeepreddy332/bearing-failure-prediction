@@ -16,6 +16,11 @@ anywhere** and cannot be filled without new code. Details below.
 > validates raw recordings as 20,480-by-8 finite numeric matrices and publishes atomic
 > physical-bearing/sensor identities under `data/canonical/ims_set1/v1/`. This is not a
 > labels, features, split, model, serving, or Set 2 pipeline.
+>
+> Phase C terminal-outcome evidence and physical-observation endpoint proxies are
+> reproducible with: `python -m src.data.set1_outcomes --repo-root .`. This DB-free
+> command pins the Phase B canonical artifacts and writes only
+> `data/canonical/ims_set1_outcomes/v1/`; it does not create true RUL labels.
 
 ---
 

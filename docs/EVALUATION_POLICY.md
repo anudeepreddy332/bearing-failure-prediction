@@ -6,6 +6,11 @@ supersedes any model-selection process that optimizes only generic MAE or R2.
 Source-of-truth baseline for this policy:
 `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
 
+**Label boundary:** Historical "RUL" metrics evaluate the observed-run-end proxy used
+by the legacy pipeline, not exact physical RUL truth or exact failure-time accuracy.
+They must be described as endpoint-proxy metrics unless separately supported event-time
+evidence is introduced.
+
 ## Current Evidence
 
 Leakage-safe Phase 1 metrics:

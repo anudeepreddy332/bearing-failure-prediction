@@ -1,0 +1,48 @@
+{
+  "schema_version": "ims_set1_outcomes_v1",
+  "phase_b": {
+    "identity_spec_file_sha256": "31eeba03f9d47b08541c99e66a537f98e453a5e8a75e8d60b02ad5573e64a546",
+    "identity_spec_semantic_json_sha256": "7e3035aefbfe78702dfffc5be6c0a77b2af0f4f9394a446db092c43d97e5898e",
+    "canonical_summary_sha256": "1ecc9aa095c4d364bb0f65bf6baf2c4f0a891192b0ea38a64f7b98e441e81361",
+    "canonical_path": "data/canonical/ims_set1/v1",
+    "peer_artifact_sha256": {
+      "bearing_observations.jsonl": "4ddd2e62c6d0003fad0cfbd9884a979929a361730ac3ba8f4bd9a18904087e2f",
+      "dataset.json": "5b3a793eb65ffbd3c3881aedf8faf2b68b206233314ce0130ae327b41136cbe2",
+      "diagnostics.json": "f3ddc7c4f647a8df33a17d936e556a9310c87e1f83cff8f908a726c3b904764e",
+      "recording_validation.jsonl": "0eb11c214709702314eae349648c80055430a1c91ec36532055f4946df067bb0",
+      "recordings.jsonl": "ed8f8f63292b55bc2cdae6f2bab01abfc0b6bd7fc00e9af1acaac07df6e5a807",
+      "run.json": "357628ad399931b322df49649bac77646b8ef2c31e16ac1596027500d809a122",
+      "sensor_observations.jsonl": "fdf52f29ac7bebec66d9b5b805439aac35ac2d65817b06ed1c4586e7ac3e7789",
+      "sensors.jsonl": "be57295f9834dd2b8cbcd9c2d0ffce6bd9b365fc8ede7a991793c72a0a121f14",
+      "trajectories.jsonl": "d021ec6bfed76665ab6ebe1d649e47466781ea4214265b3fb5504eea24cea88a"
+    }
+  },
+  "phase_a_manifest_sha256": "f93e2f381ebeaf95d617ba1fe40c2d8ab24ca0c50f4c6887b435f30c5c960176",
+  "metadata_evidence": {
+    "evidence_id": "ims_metadata_pdf_set1_terminal_damage_v1",
+    "relative_path": "data/Readme Document for IMS Bearing Data.pdf",
+    "sha256": "cf46d37c21f7f292c11bbbdd4695d876c417ed1d6425e3d87c962ae2182ae6ed",
+    "page": 1,
+    "classification": "publisher_metadata_terminal_damage_documented_by_experiment_end"
+  },
+  "proxy_contract": {
+    "proxy_contract_id": "ims_set1_observed_run_endpoint_proxy_v1",
+    "first_proxy_seconds": 2979212,
+    "interpretation": "naive_source_local_wall_clock_to_observed_run_end_including_experiment_pauses_not_true_rul_or_event_time_bound"
+  },
+  "outcome_schema": {
+    "fields": ["trajectory_outcome_id", "trajectory_id", "physical_bearing_id", "terminal_damage_documented", "damage_mode", "event_time_status", "exact_event_timestamp", "event_time_interval_start", "event_time_interval_end", "observation_start_timestamp", "observation_end_timestamp", "qualified_censoring_interpretation", "evidence_id"],
+    "nullable_fields": ["damage_mode", "exact_event_timestamp", "event_time_interval_start", "event_time_interval_end"]
+  },
+  "proxy_schema": {
+    "fields": ["bearing_observation_id", "trajectory_outcome_id", "trajectory_id", "observation_timestamp", "observed_run_endpoint_timestamp", "observed_run_endpoint_proxy_seconds", "proxy_contract_id"],
+    "nullable_fields": []
+  },
+  "outputs": ["trajectory_outcomes.jsonl", "bearing_observation_endpoint_proxies.jsonl", "label_diagnostics.json", "labeling_summary.json"],
+  "outcomes": [
+    {"physical_bearing_id": "bearing_1", "terminal_damage_documented": false, "damage_mode": null, "event_time_status": "not_documented", "qualified_censoring_interpretation": "no_terminal_damage_documented_before_observation_end_not_health_or_event_free_not_standard_right_censoring"},
+    {"physical_bearing_id": "bearing_2", "terminal_damage_documented": false, "damage_mode": null, "event_time_status": "not_documented", "qualified_censoring_interpretation": "no_terminal_damage_documented_before_observation_end_not_health_or_event_free_not_standard_right_censoring"},
+    {"physical_bearing_id": "bearing_3", "terminal_damage_documented": true, "damage_mode": "inner_race_defect", "event_time_status": "unknown", "qualified_censoring_interpretation": "terminal_damage_documented_by_experiment_end_event_time_unknown"},
+    {"physical_bearing_id": "bearing_4", "terminal_damage_documented": true, "damage_mode": "roller_element_defect", "event_time_status": "unknown", "qualified_censoring_interpretation": "terminal_damage_documented_by_experiment_end_event_time_unknown"}
+  ]
+}

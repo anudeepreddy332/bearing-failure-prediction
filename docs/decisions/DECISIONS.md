@@ -683,6 +683,28 @@ copy remains unauthenticated to the publisher even if Phase B integrity gates pa
 
 ---
 
+### D-032 — Authorize terminal-outcome evidence and observed-run-end proxies only
+**Decision:** Phase C records declarative terminal-damage evidence for the four Set 1
+physical trajectories and publishes `observed_run_endpoint_proxy_seconds` only on
+physical bearing observations. Bearings 3 and 4 have terminal damage documented by the
+experiment end, with `inner_race_defect` and `roller_element_defect` respectively; their
+event times and event-time bounds are unknown and null. Bearings 1 and 2 have no
+documented terminal damage before observation end, which is neither a health/event-free
+claim nor automatically a standard right-censored survival record. The proxy is naive
+source-local wall-clock time to the observed run endpoint, includes experiment pauses,
+and is not true RUL, physical time-to-failure, an event-time bound, or survival duration.
+**Why:** Legacy `rul_*` values assumed the final recording was a failure time. The IMS
+metadata supports terminal damage classification but not an exact event timestamp or
+defensible interval. Retaining a qualified endpoint proxy preserves historical
+failed-bearing diagnostic comparability without converting the assumption into physical
+truth.
+**Scope boundary:** This decision does not authorize windows, features, sensor views,
+splits, evaluation, training, tuning, Postgres, serving, or Set 2. No sensor-level label
+or proxy is created. Historical `rul_*` values are superseded as labels by the explicit
+endpoint-proxy contract, while historical artifacts remain unchanged.
+
+---
+
 ## Log format for future entries
 
 ```
