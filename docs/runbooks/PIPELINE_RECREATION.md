@@ -9,6 +9,14 @@ records exactly what is complete vs. missing.
 model` chain is complete and runnable. The `windows` table has **no populating script
 anywhere** and cannot be filled without new code. Details below.
 
+> **Phase B canonical foundation (2026-07-16):** The historical Postgres path below is
+> non-canonical for source identity and generalization evidence. The DB-free Set 1
+> foundation is now `src/data/set1_identity.py` with
+> `configs/datasets/ims_set1_identity_v1.json`, pinned to the Phase A manifest. It
+> validates raw recordings as 20,480-by-8 finite numeric matrices and publishes atomic
+> physical-bearing/sensor identities under `data/canonical/ims_set1/v1/`. This is not a
+> labels, features, split, model, serving, or Set 2 pipeline.
+
 ---
 
 ## Answers to the 8 discovery questions
