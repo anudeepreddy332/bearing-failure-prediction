@@ -44,3 +44,13 @@ The normal command completed as a strict no-op against the tracked publication
 byte-identical file-for-file and then removed. Disposable copies rejected both an
 unexpected output member and a byte-tampered artifact; the tracked publication was
 not modified during either check.
+
+## Contract-test coverage
+
+The focused Phase C suite now contains 21 tests. It covers exact config, schema,
+nullable-field, scientific-outcome, fixed-proxy-contract, and known-ID contracts; a
+synthetic four-trajectory, irregular-wall-clock build; Phase B observation/sensor
+natural-key, cardinality, and foreign-key failures; output no-op and malformed-output
+rejection; and CLI failure for invalid config. The synthetic test uses no raw signals or
+tracked canonical output. This is focused contract coverage, not an exhaustive proof of
+all filesystem races or all possible corruptions of Phase B artifacts.

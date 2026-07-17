@@ -48,6 +48,20 @@ FORBIDDEN_PROXY_FRAGMENTS = (
     "event_observed", "rul", "survival", "feature", "window", "threshold", "split",
     "model", "sensor", "channel", "axis",
 )
+EXPECTED_PROXY_INTERPRETATION = (
+    "naive_source_local_wall_clock_to_observed_run_end_including_experiment_pauses_"
+    "not_true_rul_or_event_time_bound"
+)
+EXPECTED_OUTCOME_NULLABLE_FIELDS = (
+    "damage_mode", "exact_event_timestamp", "event_time_interval_start", "event_time_interval_end",
+)
+EXPECTED_PROXY_NULLABLE_FIELDS: tuple[str, ...] = ()
+EXPECTED_OUTCOMES = {
+    "bearing_1": (False, None, "not_documented", "no_terminal_damage_documented_before_observation_end_not_health_or_event_free_not_standard_right_censoring"),
+    "bearing_2": (False, None, "not_documented", "no_terminal_damage_documented_before_observation_end_not_health_or_event_free_not_standard_right_censoring"),
+    "bearing_3": (True, "inner_race_defect", "unknown", "terminal_damage_documented_by_experiment_end_event_time_unknown"),
+    "bearing_4": (True, "roller_element_defect", "unknown", "terminal_damage_documented_by_experiment_end_event_time_unknown"),
+}
 
 
 class OutcomeError(ValueError):
@@ -135,6 +149,24 @@ def _rows(path: Path, label: str, fields: tuple[str, ...] | None = None) -> list
     return values
 
 
+def _validate_phase_b_relations(
+    bearing: list[dict[str, Any]], sensor: list[dict[str, Any]], trajectories: list[dict[str, Any]],
+) -> None:
+    """Validate physical-observation and sensor-observation identity relationships."""
+    if len({row["trajectory_id"] for row in trajectories}) != len(trajectories):
+        raise OutcomeError("trajectory identity uniqueness failure")
+    if len({row["bearing_observation_id"] for row in bearing}) != len(bearing) or len({(row["recording_id"], row["trajectory_id"]) for row in bearing}) != len(bearing):
+        raise OutcomeError("bearing observation uniqueness failure")
+    if set(Counter(row["recording_id"] for row in bearing).values()) != {4}:
+        raise OutcomeError("expected exactly four bearing observations per recording")
+    if len({row["sensor_observation_id"] for row in sensor}) != len(sensor) or len({(row["recording_id"], row["sensor_id"]) for row in sensor}) != len(sensor):
+        raise OutcomeError("sensor observation uniqueness failure")
+    if set(Counter(row["bearing_observation_id"] for row in sensor).values()) != {2}:
+        raise OutcomeError("expected exactly two sensor observations per bearing observation")
+    if {row["bearing_observation_id"] for row in sensor} != {row["bearing_observation_id"] for row in bearing}:
+        raise OutcomeError("sensor observation foreign key mismatch")
+
+
 def _check_phase_b(repo: Path, cfg: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     phase_b = _object(cfg["phase_b"], {
         "canonical_path", "canonical_summary_sha256", "identity_spec_file_sha256",
@@ -168,16 +200,7 @@ def _check_phase_b(repo: Path, cfg: dict[str, Any]) -> tuple[list[dict[str, Any]
     ))
     if len(bearing) != 8624 or len(sensor) != 17248 or len(trajectories) != 4:
         raise OutcomeError("Phase B cardinality mismatch")
-    if len({row["bearing_observation_id"] for row in bearing}) != len(bearing) or len({(row["recording_id"], row["trajectory_id"]) for row in bearing}) != len(bearing):
-        raise OutcomeError("bearing observation uniqueness failure")
-    if set(Counter(row["recording_id"] for row in bearing).values()) != {4}:
-        raise OutcomeError("expected exactly four bearing observations per recording")
-    if len({row["sensor_observation_id"] for row in sensor}) != len(sensor) or len({(row["recording_id"], row["sensor_id"]) for row in sensor}) != len(sensor):
-        raise OutcomeError("sensor observation uniqueness failure")
-    if set(Counter(row["bearing_observation_id"] for row in sensor).values()) != {2}:
-        raise OutcomeError("expected exactly two sensor observations per bearing observation")
-    if {row["bearing_observation_id"] for row in sensor} != {row["bearing_observation_id"] for row in bearing}:
-        raise OutcomeError("sensor observation foreign key mismatch")
+    _validate_phase_b_relations(bearing, sensor, trajectories)
     return bearing, sensor, trajectories
 
 
@@ -192,11 +215,16 @@ def _validate_config(repo: Path, config_path: Path) -> dict[str, Any]:
     if sha256_bytes(_stable_bytes(repo / _relative(evidence["relative_path"], "metadata_evidence.relative_path"), "metadata evidence")) != _sha(evidence["sha256"], "metadata evidence sha256"):
         raise OutcomeError("metadata evidence pin mismatch")
     contract = _object(cfg["proxy_contract"], {"proxy_contract_id", "first_proxy_seconds", "interpretation"}, "proxy_contract")
-    if contract["proxy_contract_id"] != "ims_set1_observed_run_endpoint_proxy_v1" or contract["first_proxy_seconds"] != 2979212 or not isinstance(contract["interpretation"], str):
+    if (
+        contract["proxy_contract_id"] != "ims_set1_observed_run_endpoint_proxy_v1"
+        or contract["first_proxy_seconds"] != 2979212
+        or contract["interpretation"] != EXPECTED_PROXY_INTERPRETATION
+    ):
         raise OutcomeError("invalid fixed proxy contract")
     for name, fields in (("outcome_schema", OUTCOME_FIELDS), ("proxy_schema", PROXY_FIELDS)):
         schema = _object(cfg[name], {"fields", "nullable_fields"}, name)
-        if tuple(schema["fields"]) != fields or not isinstance(schema["nullable_fields"], list):
+        expected_nullable = EXPECTED_OUTCOME_NULLABLE_FIELDS if name == "outcome_schema" else EXPECTED_PROXY_NULLABLE_FIELDS
+        if tuple(schema["fields"]) != fields or tuple(schema["nullable_fields"]) != expected_nullable:
             raise OutcomeError(f"invalid {name}")
     if tuple(cfg["outputs"]) != OUTPUTS:
         raise OutcomeError("output set mismatch")
@@ -207,12 +235,13 @@ def _validate_config(repo: Path, config_path: Path) -> dict[str, Any]:
         if bearing in seen or bearing not in {"bearing_1", "bearing_2", "bearing_3", "bearing_4"} or type(outcome["terminal_damage_documented"]) is not bool:
             raise OutcomeError("invalid declarative outcome")
         seen.add(bearing)
-        if not isinstance(outcome["event_time_status"], str) or not isinstance(outcome["qualified_censoring_interpretation"], str):
-            raise OutcomeError("invalid declarative outcome text")
-        if bearing in {"bearing_1", "bearing_2"} and (outcome["terminal_damage_documented"] or outcome["damage_mode"] is not None or outcome["event_time_status"] != "not_documented"):
-            raise OutcomeError("bearing 1/2 outcome claim is invalid")
-        if bearing in {"bearing_3", "bearing_4"} and (not outcome["terminal_damage_documented"] or not isinstance(outcome["damage_mode"], str) or outcome["event_time_status"] != "unknown"):
-            raise OutcomeError("bearing 3/4 outcome claim is invalid")
+        expected = EXPECTED_OUTCOMES[bearing]
+        observed = (
+            outcome["terminal_damage_documented"], outcome["damage_mode"], outcome["event_time_status"],
+            outcome["qualified_censoring_interpretation"],
+        )
+        if observed != expected:
+            raise OutcomeError(f"invalid scientific outcome claim for {bearing}")
     return cfg
 
 
@@ -243,14 +272,21 @@ def _publish(output: Path, artifacts: dict[str, bytes]) -> bool:
     return True
 
 
-def build_outcomes(config_path: Path, repo_root: Path, output: Path) -> tuple[bool, dict[str, str]]:
-    cfg = _validate_config(repo_root, config_path)
-    bearing, _sensor, trajectories = _check_phase_b(repo_root, cfg)
+def _build_outcome_rows(
+    cfg: dict[str, Any], bearing: list[dict[str, Any]], trajectories: list[dict[str, Any]], expected_proxy_count: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build physical-only outcomes and endpoint proxies from already-validated inputs."""
     outcome_cfg = {row["physical_bearing_id"]: row for row in cfg["outcomes"]}
     trajectories_by_id = {row["trajectory_id"]: row for row in trajectories}
     if set(outcome_cfg) != {row["physical_bearing_id"] for row in trajectories}:
         raise OutcomeError("outcome trajectory coverage mismatch")
-    grouped = {tid: sorted((row for row in bearing if row["trajectory_id"] == tid), key=lambda row: row["timestamp_local"]) for tid in trajectories_by_id}
+    grouped = {
+        trajectory_id: sorted(
+            (row for row in bearing if row["trajectory_id"] == trajectory_id),
+            key=lambda row: row["timestamp_local"],
+        )
+        for trajectory_id in trajectories_by_id
+    }
     outcomes: list[dict[str, Any]] = []
     proxies: list[dict[str, Any]] = []
     for trajectory_id in trajectories_by_id:
@@ -260,7 +296,9 @@ def build_outcomes(config_path: Path, repo_root: Path, output: Path) -> tuple[bo
         if not rows:
             raise OutcomeError("empty physical trajectory")
         start, end = rows[0]["timestamp_local"], rows[-1]["timestamp_local"]
-        outcome_id = _id("trajectory_terminal_outcome", {"trajectory_id": trajectory_id, "evidence_id": cfg["metadata_evidence"]["evidence_id"]})
+        outcome_id = _id("trajectory_terminal_outcome", {
+            "trajectory_id": trajectory_id, "evidence_id": cfg["metadata_evidence"]["evidence_id"],
+        })
         outcome = {
             "trajectory_outcome_id": outcome_id, "trajectory_id": trajectory_id,
             "physical_bearing_id": trajectory["physical_bearing_id"],
@@ -287,14 +325,27 @@ def build_outcomes(config_path: Path, repo_root: Path, output: Path) -> tuple[bo
                 "observed_run_endpoint_timestamp": end, "observed_run_endpoint_proxy_seconds": seconds,
                 "proxy_contract_id": cfg["proxy_contract"]["proxy_contract_id"],
             }
-            if tuple(proxy) != PROXY_FIELDS or any(fragment in field.lower() for field in proxy for fragment in FORBIDDEN_PROXY_FRAGMENTS):
+            if tuple(proxy) != PROXY_FIELDS or any(
+                fragment in field.lower() for field in proxy for fragment in FORBIDDEN_PROXY_FRAGMENTS
+            ):
                 raise OutcomeError("forbidden proxy field")
             values.append(seconds)
             proxies.append(proxy)
-        if values[0] != cfg["proxy_contract"]["first_proxy_seconds"] or values[-1] != 0 or any(left <= right for left, right in zip(values, values[1:])):
+        if (
+            values[0] != cfg["proxy_contract"]["first_proxy_seconds"]
+            or values[-1] != 0
+            or any(left <= right for left, right in zip(values, values[1:]))
+        ):
             raise OutcomeError("endpoint proxy arithmetic failure")
-    if len(outcomes) != 4 or len(proxies) != 8624 or len({row["bearing_observation_id"] for row in proxies}) != 8624:
+    if len(outcomes) != 4 or len(proxies) != expected_proxy_count or len({row["bearing_observation_id"] for row in proxies}) != expected_proxy_count:
         raise OutcomeError("Phase C cardinality failure")
+    return outcomes, proxies
+
+
+def build_outcomes(config_path: Path, repo_root: Path, output: Path) -> tuple[bool, dict[str, str]]:
+    cfg = _validate_config(repo_root, config_path)
+    bearing, _sensor, trajectories = _check_phase_b(repo_root, cfg)
+    outcomes, proxies = _build_outcome_rows(cfg, bearing, trajectories, expected_proxy_count=8624)
     artifacts = {
         "trajectory_outcomes.jsonl": b"".join(canonical_json_bytes(row) for row in outcomes),
         "bearing_observation_endpoint_proxies.jsonl": b"".join(canonical_json_bytes(row) for row in proxies),
