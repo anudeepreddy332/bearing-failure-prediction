@@ -16,9 +16,9 @@ productionization work.
 
 | Area | Status |
 | --- | --- |
-| ML objective | Predict RUL in hours for failed IMS Set 1 bearings |
-| Current model family | LightGBM regressor with existing tuned parameters |
-| Current evidence level | Offline validation only |
+| ML objective | Diagnose whether Set 1 endpoint-proxy regression contains bearing-specific signal beyond the shared run clock |
+| Current diagnostic | Fixed sensor-local Ridge diagnostic and explicit shared-run clock reference |
+| Current evidence level | Offline validation and canonical artifact evidence only |
 | Production readiness | Not production-ready |
 | Source-of-truth report | `reports/evaluation/phase1_validation_leakage_safe/validation_report.md` |
 
@@ -80,6 +80,25 @@ were derived before splitting:
 
 This is why the old `2.88h` and `0.9852` numbers are retained only as a
 comparison baseline, not as project claims.
+
+## Phase E Identifiability Result
+
+The newer canonical Phase E study joins pinned physical identities, endpoint proxies,
+and target-independent sensor-local base features. Its target is observed wall-clock
+time to the run endpoint, including experiment pauses. It is **not** true RUL, a failure
+time, a time bound, or damage onset.
+
+The shared-run clock reference reproduces every evaluated physical-bearing timestamp
+with zero integer-second residual. The valid conclusion is therefore
+`not_identifiable_shared_run_clock_target`: Set 1 cannot distinguish bearing degradation
+from the shared experiment clock for this target. The fixed Ridge diagnostic is reported
+only to characterize that boundary. It is not a model-selection result and cannot
+authorize Set 2, deployment, maintenance savings, or a production/generalization claim.
+
+Bearings 3 and 4 are the only documented damaged trajectories and are used for LOBO.
+Bearings 1 and 2 are inference-only censored/undocumented-outcome clock-tracking and
+alert-burden observations, not healthy controls or accuracy labels. See
+`reports/evaluation/ims_set1_phase_e_identifiability_v1/validation_report.md`.
 
 ---
 
@@ -144,12 +163,12 @@ ruff check .
 
 ## Recommended Next Steps
 
-1. Retune/evaluate the model using leakage-safe preprocessing and LOBO/purged
-   validation as the optimization objective.
-2. Add IMS Sets 2 and 3 so generalization is evaluated over more than two failed
-   bearings.
-3. Only after honest validation improves, revisit API/dashboard productionization,
-   monitoring, explainability, and deployment.
+1. Obtain an independently governed target with bearing-specific outcome timing before
+   retuning or interpreting endpoint-proxy metrics as degradation evidence.
+2. Keep Set 2 external-before-pooling and do not access or implement it without its
+   separate documented gates and authorization.
+3. Do not revisit API/dashboard productionization until an independently valid target
+   and cross-trajectory evidence exist.
 
 ---
 
