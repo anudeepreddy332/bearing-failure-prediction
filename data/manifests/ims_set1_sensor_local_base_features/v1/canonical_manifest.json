@@ -1,0 +1,40 @@
+{
+  "schema_version": "ims_set1_phase_d_canonical_manifest_v1",
+  "canonical_directory": "data/canonical/ims_set1_sensor_local_base_features/v1",
+  "row_count": 17248,
+  "feature_config": {
+    "path": "configs/features/ims_set1_sensor_local_base_v1.json",
+    "sha256": "c586d816c0710a289aa669e8d57b6702fa099ad24dd94b5e58b8714f51c5fdcf"
+  },
+  "semantic_spec_sha256": "2b3c7999a1aee55a36851ad55b6c23f97e7077ca54598cf105747f81119b0cb0",
+  "phase_a_manifest": {
+    "path": "data/manifests/ims_set1/v1/recordings_manifest.jsonl",
+    "sha256": "f93e2f381ebeaf95d617ba1fe40c2d8ab24ca0c50f4c6887b435f30c5c960176"
+  },
+  "phase_b_summary": {
+    "path": "data/canonical/ims_set1/v1/canonicalization_summary.json",
+    "sha256": "1ecc9aa095c4d364bb0f65bf6baf2c4f0a891192b0ea38a64f7b98e441e81361"
+  },
+  "artifacts": [
+    {
+      "filename": "sensor_observation_base_features.jsonl",
+      "byte_size": 21236167,
+      "sha256": "1248745eeaab2f2be395c01f961d6e0a801c2837b0f282dde5ab0038ad2ea60f"
+    },
+    {
+      "filename": "feature_definitions.json",
+      "byte_size": 4232,
+      "sha256": "88eafb6cf54420dcaec96e6f623c2b4106c710c00bdd57a8aa53ebc2bcfc804d"
+    },
+    {
+      "filename": "feature_diagnostics.json",
+      "byte_size": 106,
+      "sha256": "c5b49392bf9519f1d6238dd58c1e3e0bd121567250e597c297acc110ec7ea5ae"
+    },
+    {
+      "filename": "feature_extraction_summary.json",
+      "byte_size": 642,
+      "sha256": "84cce8c8310341928e46c67eca9e2d28d88f0e82d533ad54843ac65568f2550a"
+    }
+  ]
+}
