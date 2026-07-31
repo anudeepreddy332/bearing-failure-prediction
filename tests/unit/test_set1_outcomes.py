@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 from datetime import datetime, timedelta
@@ -10,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+import src.data.set1_outcomes as outcomes_module
 from src.data.set1_outcomes import (
     OUTPUTS,
     OutcomeError,
@@ -18,12 +20,21 @@ from src.data.set1_outcomes import (
     _publish,
     _validate_config,
     _validate_phase_b_relations,
+    _verify_metadata_evidence,
+    build_outcomes,
     main,
 )
 
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIG = REPO / "configs/datasets/ims_set1_outcomes_v1.json"
+COMMITTED_METADATA_EVIDENCE = {
+    "evidence_id": "ims_metadata_pdf_set1_terminal_damage_v1",
+    "relative_path": "data/Readme Document for IMS Bearing Data.pdf",
+    "sha256": "cf46d37c21f7f292c11bbbdd4695d876c417ed1d6425e3d87c962ae2182ae6ed",
+    "page": 1,
+    "classification": "publisher_metadata_terminal_damage_documented_by_experiment_end",
+}
 
 
 @pytest.fixture
@@ -35,6 +46,18 @@ def _write_config(tmp_path: Path, value: dict[str, object]) -> Path:
     path = tmp_path / "outcomes.json"
     path.write_text(json.dumps(value), encoding="utf-8")
     return path
+
+
+def _synthetic_evidence_config(
+    config: dict[str, object], relative_path: str, content: bytes,
+) -> dict[str, object]:
+    changed = copy.deepcopy(config)
+    changed["metadata_evidence"] = {
+        **changed["metadata_evidence"],
+        "relative_path": relative_path,
+        "sha256": hashlib.sha256(content).hexdigest(),
+    }
+    return changed
 
 
 def _synthetic_graph() -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
@@ -70,8 +93,19 @@ def _synthetic_graph() -> tuple[list[dict[str, object]], list[dict[str, object]]
     return bearing_rows, sensor_rows, trajectories
 
 
-def test_config_is_exact_committed_contract(config: dict[str, object]) -> None:
-    _validate_config(REPO, CONFIG)
+def test_config_is_exact_committed_contract(
+    config: dict[str, object], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_stable_bytes = outcomes_module._stable_bytes
+
+    def config_only_reader(path: Path, label: str) -> bytes:
+        if path.resolve() != CONFIG.resolve():
+            raise AssertionError(f"pure config validation accessed non-config path: {path}")
+        return original_stable_bytes(path, label)
+
+    monkeypatch.setattr(outcomes_module, "_stable_bytes", config_only_reader)
+    assert _validate_config(CONFIG) == config
+    assert config["metadata_evidence"] == COMMITTED_METADATA_EVIDENCE
     assert config["proxy_contract"] == {
         "proxy_contract_id": "ims_set1_observed_run_endpoint_proxy_v1",
         "first_proxy_seconds": 2_979_212,
@@ -100,7 +134,91 @@ def test_config_rejects_schema_and_scientific_claim_drift(
     changed = copy.deepcopy(config)
     mutate(changed)
     with pytest.raises(OutcomeError, match=message):
-        _validate_config(REPO, _write_config(tmp_path, changed))
+        _validate_config(_write_config(tmp_path, changed))
+
+
+@pytest.mark.parametrize("relative_path", ("/absolute.pdf", "../escape.pdf", "data\\evidence.pdf"))
+def test_config_rejects_unsafe_metadata_evidence_paths(
+    tmp_path: Path, config: dict[str, object], relative_path: str,
+) -> None:
+    changed = copy.deepcopy(config)
+    changed["metadata_evidence"]["relative_path"] = relative_path
+    with pytest.raises(OutcomeError, match="unsafe|invalid metadata_evidence.relative_path"):
+        _validate_config(_write_config(tmp_path, changed))
+
+
+def test_metadata_evidence_verification_accepts_matching_synthetic_bytes(
+    tmp_path: Path, config: dict[str, object],
+) -> None:
+    content = b"synthetic terminal damage evidence\n"
+    path = tmp_path / "data/evidence.pdf"
+    path.parent.mkdir()
+    path.write_bytes(content)
+    _verify_metadata_evidence(
+        tmp_path, _synthetic_evidence_config(config, "data/evidence.pdf", content),
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "message"),
+    (
+        ("missing", "cannot open metadata evidence"),
+        ("wrong_bytes", "metadata evidence pin mismatch"),
+        ("symlink", "metadata evidence is not a regular file"),
+        ("non_regular", "metadata evidence is not a regular file"),
+    ),
+)
+def test_metadata_evidence_verification_rejects_invalid_source(
+    tmp_path: Path, config: dict[str, object], kind: str, message: str,
+) -> None:
+    content = b"expected evidence\n"
+    path = tmp_path / "data/evidence.pdf"
+    path.parent.mkdir()
+    if kind == "wrong_bytes":
+        path.write_bytes(b"substituted evidence\n")
+    elif kind == "symlink":
+        target = tmp_path / "target.pdf"
+        target.write_bytes(content)
+        path.symlink_to(target)
+    elif kind == "non_regular":
+        os.mkfifo(path)
+    with pytest.raises(OutcomeError, match=message):
+        _verify_metadata_evidence(
+            tmp_path, _synthetic_evidence_config(config, "data/evidence.pdf", content),
+        )
+
+
+def test_missing_evidence_stops_build_before_phase_b_or_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "outcomes"
+
+    def unexpected_phase_b(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Phase B loading must not run without metadata evidence")
+
+    monkeypatch.setattr(outcomes_module, "_check_phase_b", unexpected_phase_b)
+    with pytest.raises(OutcomeError, match="cannot open metadata evidence"):
+        build_outcomes(CONFIG, tmp_path, output)
+    assert not output.exists()
+
+
+def test_missing_evidence_preserves_existing_output_and_cli_fails(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "outcomes"
+    output.mkdir()
+    marker = output / "unchanged"
+    marker.write_bytes(b"preserve me")
+    before = (marker.read_bytes(), marker.stat().st_ino, marker.stat().st_mtime_ns)
+    with pytest.raises(OutcomeError, match="cannot open metadata evidence"):
+        build_outcomes(CONFIG, tmp_path, output)
+    assert (marker.read_bytes(), marker.stat().st_ino, marker.stat().st_mtime_ns) == before
+
+    cli_output = tmp_path / "cli-outcomes"
+    assert main([
+        "--repo-root", str(tmp_path), "--config", str(CONFIG), "--output-dir", str(cli_output),
+    ]) == 2
+    assert not cli_output.exists()
 
 
 def test_known_answer_terminal_outcome_id_is_stable() -> None:
