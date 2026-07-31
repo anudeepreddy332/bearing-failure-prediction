@@ -204,16 +204,17 @@ def _check_phase_b(repo: Path, cfg: dict[str, Any]) -> tuple[list[dict[str, Any]
     return bearing, sensor, trajectories
 
 
-def _validate_config(repo: Path, config_path: Path) -> dict[str, Any]:
+def _validate_config(config_path: Path) -> dict[str, Any]:
+    """Validate the declarative Phase C contract without opening repository inputs."""
     cfg = _object(_json(config_path, "outcome config"), CONFIG_FIELDS, "outcome config")
     if cfg["schema_version"] != "ims_set1_outcomes_v1" or not isinstance(cfg["outcomes"], list) or len(cfg["outcomes"]) != 4:
         raise OutcomeError("invalid outcome config identity or outcome count")
     _sha(cfg["phase_a_manifest_sha256"], "phase_a_manifest_sha256")
     evidence = _object(cfg["metadata_evidence"], {"evidence_id", "relative_path", "sha256", "page", "classification"}, "metadata_evidence")
-    if not all(isinstance(evidence[name], str) and evidence[name] for name in ("evidence_id", "classification")) or not isinstance(evidence["page"], int) or evidence["page"] < 1:
+    if not all(isinstance(evidence[name], str) and evidence[name] for name in ("evidence_id", "classification")) or type(evidence["page"]) is not int or evidence["page"] < 1:
         raise OutcomeError("invalid metadata evidence")
-    if sha256_bytes(_stable_bytes(repo / _relative(evidence["relative_path"], "metadata_evidence.relative_path"), "metadata evidence")) != _sha(evidence["sha256"], "metadata evidence sha256"):
-        raise OutcomeError("metadata evidence pin mismatch")
+    _relative(evidence["relative_path"], "metadata_evidence.relative_path")
+    _sha(evidence["sha256"], "metadata evidence sha256")
     contract = _object(cfg["proxy_contract"], {"proxy_contract_id", "first_proxy_seconds", "interpretation"}, "proxy_contract")
     if (
         contract["proxy_contract_id"] != "ims_set1_observed_run_endpoint_proxy_v1"
@@ -243,6 +244,20 @@ def _validate_config(repo: Path, config_path: Path) -> dict[str, Any]:
         if observed != expected:
             raise OutcomeError(f"invalid scientific outcome claim for {bearing}")
     return cfg
+
+
+def _verify_metadata_evidence(repo_root: Path, cfg: dict[str, Any]) -> None:
+    """Fail closed unless the configured metadata evidence is the pinned file snapshot."""
+    evidence = cfg["metadata_evidence"]
+    if not isinstance(evidence, dict):
+        raise OutcomeError("invalid metadata evidence")
+    relative_path = _relative(evidence.get("relative_path"), "metadata_evidence.relative_path")
+    expected_hash = _sha(evidence.get("sha256"), "metadata evidence sha256")
+    actual_hash = sha256_bytes(
+        _stable_bytes(repo_root / relative_path, "metadata evidence")
+    )
+    if actual_hash != expected_hash:
+        raise OutcomeError("metadata evidence pin mismatch")
 
 
 def _publish(output: Path, artifacts: dict[str, bytes]) -> bool:
@@ -343,7 +358,8 @@ def _build_outcome_rows(
 
 
 def build_outcomes(config_path: Path, repo_root: Path, output: Path) -> tuple[bool, dict[str, str]]:
-    cfg = _validate_config(repo_root, config_path)
+    cfg = _validate_config(config_path)
+    _verify_metadata_evidence(repo_root, cfg)
     bearing, _sensor, trajectories = _check_phase_b(repo_root, cfg)
     outcomes, proxies = _build_outcome_rows(cfg, bearing, trajectories, expected_proxy_count=8624)
     artifacts = {
