@@ -1,0 +1,11 @@
+{
+  "schema_version": "ims_set1_phase_d_reference_environment_v1",
+  "role": "recorded_reference_not_mandatory",
+  "implementation": "CPython",
+  "python": "3.13.5",
+  "numpy": "2.2.6",
+  "os": "Darwin",
+  "arch": "arm64",
+  "worker_mode": "serial",
+  "requirements_file": "requirements/ims_set1_phase_d_reference_v1.txt"
+}
