@@ -705,6 +705,46 @@ endpoint-proxy contract, while historical artifacts remain unchanged.
 
 ---
 
+### D-033 — Authorize Set 1 sensor-local target-independent base features only
+**Decision:** Phase D may consume the pinned Phase A source registration and Phase B
+physical/sensor identity graph to publish deterministic, per-sensor-observation base
+features. It is restricted to the versioned 17-feature, 19-window sensor-local contract.
+Feature rows preserve provenance only; they are not labels, model inputs, selected
+features, sensor views, weights, splits, or evaluation results.
+**Why:** A canonical target-independent feature foundation is required before any later,
+separately authorized validation work. It must not inherit Phase C endpoint proxies or
+any historical target-bearing artifact.
+**Scope boundary:** This decision does not authorize temporal features,
+`common_sensor_view_v1`, label joins, feature selection, splits, evaluation, training,
+tuning, Postgres, serving, or Set 2. Raw amplitude/power features and skewness remain
+diagnostic-only for cross-dataset use; normalized shape/spectral features are candidates
+for later review, not proven comparable.
+**Acceptance clarification:** Prohibited categories are excluded from feature rows, feature definitions, model-input payload, and Phase A/B provenance; the exact zero-valued counters in `feature_diagnostics.json` are permitted file-level audit metadata and are never feature inputs.
+
+---
+
+### D-034 — Make Phase D canonical hashes, not host runtime, the acceptance authority
+**Decision:** The recorded CPython 3.13.5, NumPy 2.2.6, Darwin arm64, serial fingerprint
+is retained as provenance in `configs/environments/ims_set1_phase_d_reference_v1.json`.
+It is not a mandatory publication gate. The authoritative acceptance contract is the
+canonical artifact manifest, exact hashes, raw-free structural/identity validation, and
+strict producer no-op behavior. The phase-specific NumPy constraint is isolated in
+`requirements/ims_set1_phase_d_reference_v1.txt`; the legacy environment remains
+separate. CI now validates pull requests to `main` and
+`production-readiness-refactor` on Ubuntu/Python 3.11, including the raw-free canonical
+validator; it does not regenerate artifacts or certify that Linux is a publication
+runtime.
+**Why:** Runtime rejection was dead and inconsistent with the actual producer path. A
+recorded reference environment is useful provenance, but exact canonical bytes and
+independent metadata/identity checks are the defensible authority for this fixed
+artifact.
+**Scope boundary:** This repairs Phase D acceptance and CI only. It does not alter the
+feature configuration, feature formulas, canonical bytes, Phase A/B/C semantics, labels,
+model evidence, serving, Set 2/3 work, or production-readiness claims. README and Set 2
+documentation corrections remain deferred P1 work.
+
+---
+
 ## Log format for future entries
 
 ```

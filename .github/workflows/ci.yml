@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, production-readiness-refactor]
   pull_request:
-    branches: [main]
+    branches: [main, production-readiness-refactor]
 
 jobs:
   lint-and-test:
@@ -20,10 +20,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install -c requirements/ims_set1_phase_d_reference_v1.txt -e ".[dev]"
 
       - name: Lint (ruff)
         run: ruff check .
 
       - name: Test (pytest)
-        run: pytest tests/ -v
+        run: pytest tests/ -q -p no:cacheprovider
+
+      - name: Validate Phase D canonical artifact
+        run: >
+          python scripts/validate_set1_phase_d_preflight.py --repo-root .
+          --artifacts data/canonical/ims_set1_sensor_local_base_features/v1
+          --expected-row-count 17248
+          --canonical-manifest
+          data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json

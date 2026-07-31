@@ -11,9 +11,9 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Anudeep" }]
 
-# Runtime deps are pinned in requirements.txt (kept as the single source of
-# truth for reproducible installs). This block lists the same top-level libs
-# without hard pins so `pip install -e .` resolves against an existing env.
+# requirements.txt is a legacy pinned environment snapshot, not CI or
+# repository-wide dependency authority. This block keeps editable installs
+# compatible with the existing project environment.
 dependencies = [
     "numpy",
     "pandas",
