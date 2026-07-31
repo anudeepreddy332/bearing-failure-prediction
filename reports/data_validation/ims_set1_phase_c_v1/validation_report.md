@@ -54,3 +54,49 @@ natural-key, cardinality, and foreign-key failures; output no-op and malformed-o
 rejection; and CLI failure for invalid config. The synthetic test uses no raw signals or
 tracked canonical output. This is focused contract coverage, not an exhaustive proof of
 all filesystem races or all possible corruptions of Phase B artifacts.
+
+## Cold-clone evidence verification correction
+
+The prior unit-test contract mixed pure outcome-config validation with verification of
+the developer-local metadata PDF. The PDF is intentionally not repository-tracked, so a
+clean checkout could not run ordinary config tests even though the publication contract
+was correct. The implementation now separates `_validate_config(config_path)`, which
+reads only the declarative configuration and validates its schema, scientific contract,
+safe relative path, and SHA-256 shape, from `_verify_metadata_evidence(repo_root, cfg)`.
+The latter retains the stable no-follow reader and mandatory byte-for-byte PDF pin before
+any Phase B load, row construction, output creation, or no-op acceptance.
+
+The committed publication evidence contract is unchanged: evidence ID
+`ims_metadata_pdf_set1_terminal_damage_v1`, path
+`data/Readme Document for IMS Bearing Data.pdf`, page 1, classification
+`publisher_metadata_terminal_damage_documented_by_experiment_end`, and SHA-256
+`cf46d37c21f7f292c11bbbdd4695d876c417ed1d6425e3d87c962ae2182ae6ed`.
+The PDF is neither claimed redistributable nor repository-tracked. Permanent tests use
+synthetic bytes under temporary directories for matching, missing, substituted,
+symlinked, and non-regular evidence cases. They also prove absent evidence stops the
+build before Phase B loading and preserves absent or existing outputs; the CLI fails
+nonzero without publication.
+
+In an isolated source snapshot without the PDF, the focused Phase C suite collected 31
+tests and the full DB-free suite collected 101 tests; both passed. A fresh Python 3.11.15
+PDF-free snapshot imported `src.data.set1_outcomes` from its own corrected source tree,
+then passed the base Ruff command and verbose 101-test pytest command using the already
+proven dependency environment. A separate focused run also passed with a synthetic file
+present at the configured evidence path; the guarded reader test proved pure config
+validation did not open that file.
+
+Final publication-time evidence used the hotfix source worktree as the child current
+working directory and recorded its resolved module path and source SHA-256
+`e56e0a1aae7334baf083d8e962357e61205fd04b4f21b978327c83482efeada7`.
+Against the original local repository root where the pinned PDF exists, that monitored
+producer invocation returned zero with empty stderr and `published: false`. It preserved
+the canonical directory/member device, inode, mode, size, nanosecond mtime, bytes,
+hashes, and member set. The earlier monitored no-op is retained as historical support but
+was not used as final source-origin proof because it did not record child cwd/module
+origin. Temporary review evidence is at
+`/private/tmp/ims_set1_phase_c_ci_hotfix_final_noop_v2.ukFsXd`,
+`/private/tmp/ims_set1_phase_c_ci_snapshot_corrected.CznQuB`, and
+`/private/tmp/ims_set1_phase_c_ci_evidence_present.HP3bdT`.
+
+No outcome/proxy science, configuration values, canonical artifact hashes, or decision
+record changed in this correction.
