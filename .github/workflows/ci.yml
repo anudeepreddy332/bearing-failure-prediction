@@ -36,16 +36,32 @@ jobs:
           --canonical-manifest
           data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json
 
-      - name: Rebuild and validate Phase E evidence without raw recordings
+      - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)
           second=$(mktemp -d)
           python -m src.models.set1_phase_e_identifiability --repo-root . \
-            --output-dir "$first/artifacts"
+            --output-dir "$first/artifacts" \
+            --execution-role portability-validation
           python -m src.models.set1_phase_e_identifiability --repo-root . \
-            --output-dir "$second/artifacts"
+            --output-dir "$second/artifacts" \
+            --execution-role portability-validation
           diff -r "$first/artifacts" "$second/artifacts"
           python scripts/validate_set1_phase_e_evidence.py --repo-root . \
-            --artifacts "$first/artifacts"
+            --artifacts "$first/artifacts" --mode portability-validation
           python scripts/validate_set1_phase_e_evidence.py --repo-root . \
-            --artifacts reports/evaluation/ims_set1_phase_e_identifiability_v1
+            --artifacts reports/evaluation/ims_set1_phase_e_identifiability_v1 \
+            --mode canonical-publication --canonical-manifest \
+            data/manifests/ims_set1_phase_e_identifiability/v1/canonical_manifest.json
+          python scripts/audit_set1_phase_e_cross_runtime.py \
+            --reference-artifacts reports/evaluation/ims_set1_phase_e_identifiability_v1 \
+            --portability-artifacts "$first/artifacts" \
+            --portability-repeat "$second/artifacts" \
+            --output "$first/phase_e_portability_delta_audit.json"
+          cp "$first/phase_e_portability_delta_audit.json" phase_e_portability_delta_audit.json
+
+      - name: Preserve Phase E portability delta audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-e-portability-delta-audit
+          path: phase_e_portability_delta_audit.json

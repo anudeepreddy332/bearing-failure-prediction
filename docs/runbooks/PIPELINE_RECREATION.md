@@ -50,9 +50,15 @@ anywhere** and cannot be filled without new code. Details below.
 > physical graph, Phase C endpoint proxies/outcomes, and Phase D features. It writes no
 > deployable model. Build it with `python -m src.models.set1_phase_e_identifiability
 > --repo-root . --config configs/models/ims_set1_phase_e_identifiability_v1.json
-> --output-dir reports/evaluation/ims_set1_phase_e_identifiability_v1`, then validate it
+> --output-dir reports/evaluation/ims_set1_phase_e_identifiability_v1 --execution-role
+> canonical-publication`, then validate it
 > with `python scripts/validate_set1_phase_e_evidence.py --repo-root . --artifacts
-> reports/evaluation/ims_set1_phase_e_identifiability_v1`. The target is a shared-run
+> reports/evaluation/ims_set1_phase_e_identifiability_v1 --mode canonical-publication
+> --canonical-manifest data/manifests/ims_set1_phase_e_identifiability/v1/canonical_manifest.json`.
+> Canonical byte authority belongs to the recorded environment at
+> `configs/environments/ims_set1_phase_e_reference_v1.json`; a
+> `portability-validation` build writes only temporary evidence and validates invariants,
+> not canonical bytes. The target is a shared-run
 > observed-endpoint proxy, not true RUL. Phase E’s zero-residual clock reference establishes
 > non-identifiability of bearing degradation from that target and does not authorize Set 2.
 
