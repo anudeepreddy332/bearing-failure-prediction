@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import os
+import platform
 import stat
 import sys
 import tempfile
@@ -18,11 +19,15 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import RobustScaler
+from threadpoolctl import threadpool_info, threadpool_limits
 
 from src.data.set1_manifest import canonical_json_bytes, sha256_bytes
 
 
 SCOPE_ID = "ims_set1_phase_e_identifiability_v1"
+CANONICAL_PUBLICATION = "canonical-publication"
+PORTABILITY_VALIDATION = "portability-validation"
+EXECUTION_ROLES = frozenset({CANONICAL_PUBLICATION, PORTABILITY_VALIDATION})
 OUTPUTS = (
     "fold_assignments.jsonl", "timestamp_predictions.jsonl", "metrics.json",
     "shared_run_clock_reference.json", "censored_clock_tracking.json",
@@ -38,6 +43,67 @@ FORBIDDEN_RIDGE_INPUTS = frozenset({
 
 class EvidenceError(ValueError):
     """A Phase E integrity or identifiability gate failed."""
+
+
+def _numerical_build_config(value: dict[str, Any]) -> dict[str, Any]:
+    """Keep the BLAS/LAPACK and dispatch contract without machine-local build paths."""
+    dependencies = value.get("Build Dependencies", {})
+    return {
+        "blas": {key: dependencies.get("blas", {}).get(key) for key in ("name", "version", "detection method")},
+        "lapack": {key: dependencies.get("lapack", {}).get(key) for key in ("name", "version", "detection method")},
+        "simd": value.get("SIMD Extensions", {}),
+    }
+
+
+def runtime_fingerprint() -> dict[str, Any]:
+    """Return the complete numerical/runtime fingerprint used for execution evidence."""
+    import pandas
+    import scipy
+    import sklearn
+
+    return {
+        "implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "python_build": list(platform.python_build()),
+        "os": platform.system(),
+        "os_version": platform.version(),
+        "machine": platform.machine(),
+        "architecture": list(platform.architecture()),
+        "numpy": np.__version__,
+        "scipy": scipy.__version__,
+        "pandas": pandas.__version__,
+        "scikit_learn": sklearn.__version__,
+        "numpy_build": _numerical_build_config(np.__config__.show(mode="dicts")),
+        "scipy_build": _numerical_build_config(scipy.show_config(mode="dicts")),
+        "thread_pools": [{key: pool.get(key) for key in ("internal_api", "user_api", "prefix", "version", "num_threads")} for pool in threadpool_info()],
+        "thread_limits": {
+            name: os.environ.get(name)
+            for name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")
+        },
+        "worker_mode": "serial",
+    }
+
+
+def _require_execution_role(repo: Path, cfg: dict[str, Any], role: str, output: Path) -> dict[str, Any]:
+    if role not in EXECUTION_ROLES:
+        raise EvidenceError("explicit valid execution role is required")
+    if role == PORTABILITY_VALIDATION:
+        if repo in output.resolve().parents:
+            raise EvidenceError("portability validation cannot publish repository evidence")
+        return runtime_fingerprint()
+    canonical_destination = (repo / "reports/evaluation/ims_set1_phase_e_identifiability_v1").resolve()
+    if output.resolve() != canonical_destination and Path("/private/tmp") not in output.resolve().parents:
+        raise EvidenceError("canonical role requires the canonical destination or an explicit temporary candidate")
+    environment_path, _ = _pin(repo, cfg["reference_environment"], "reference_environment")
+    environment = _json(_read(environment_path, "Phase E reference environment"), "Phase E reference environment")
+    expected = environment.get("canonical_runtime")
+    if environment.get("role") != "canonical_publication_reference" or not isinstance(expected, dict):
+        raise EvidenceError("invalid canonical publication environment contract")
+    with threadpool_limits(limits=1):
+        actual = runtime_fingerprint()
+    if actual != expected:
+        raise EvidenceError("canonical publication runtime fingerprint mismatch")
+    return actual
 
 
 def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -164,12 +230,7 @@ def load_inputs(repo: Path, config_path: Path) -> tuple[dict[str, Any], list[dic
     for name in ("phase_b_summary", "phase_c_summary", "phase_d_manifest", "phase_d_features", "phase_d_feature_definitions", "phase_d_feature_config", "reference_environment", "reference_requirements"):
         paths[name], pins[name] = _pin(repo, cfg[name], name)
     environment = _json(_read(paths["reference_environment"], "Phase E reference environment"), "Phase E reference environment")
-    if environment != {
-        "schema_version": "ims_set1_phase_e_reference_environment_v1",
-        "role": "compatible_diagnostic_reference",
-        "numpy": "2.2.6", "pandas": "2.3.2", "scipy": "1.16.1", "scikit_learn": "1.7.2",
-        "requirements_file": "requirements/ims_set1_phase_e_reference_v1.txt",
-    }:
+    if set(environment) != {"schema_version", "role", "packages", "requirements_file", "canonical_runtime", "portability_statement"} or environment.get("schema_version") != "ims_set1_phase_e_reference_environment_v1" or environment.get("role") != "canonical_publication_reference" or environment.get("packages") != {"numpy": "2.2.6", "pandas": "2.3.2", "scipy": "1.16.1", "scikit_learn": "1.7.2"} or environment.get("requirements_file") != "requirements/ims_set1_phase_e_reference_v1.txt" or not isinstance(environment.get("canonical_runtime"), dict) or not isinstance(environment.get("portability_statement"), str):
         raise EvidenceError("invalid Phase E reference environment")
     if _read(paths["reference_requirements"], "Phase E reference requirements") != (
         b"numpy==2.2.6\npandas==2.3.2\nscipy==1.16.1\nscikit-learn==1.7.2\n"
@@ -325,8 +386,10 @@ def _fit_predict(train: list[dict[str, Any]], test: list[dict[str, Any]]) -> tup
     counts = {trajectory: len({row["bearing_observation_id"] for row in train if row["trajectory_id"] == trajectory}) for trajectory in trajectories}
     weights = np.asarray([row["sensor_weight"] / (len(trajectories) * counts[row["trajectory_id"]]) for row in train], dtype=float)
     model = Ridge(alpha=1.0, fit_intercept=True, solver="svd")
-    model.fit(transformed_train, y_train, sample_weight=weights)
-    return np.full(len(test), float(np.median(y_train))), np.maximum(0.0, model.predict(transformed_test))
+    with threadpool_limits(limits=1):
+        model.fit(transformed_train, y_train, sample_weight=weights)
+        prediction = model.predict(transformed_test)
+    return np.full(len(test), float(np.median(y_train))), np.maximum(0.0, prediction)
 
 
 def _metric(target: np.ndarray, prediction: np.ndarray) -> dict[str, float]:
@@ -410,8 +473,9 @@ def _blocked_folds(records: list[dict[str, Any]], cfg: dict[str, Any]) -> list[t
     return folds
 
 
-def build(repo: Path, config_path: Path, output: Path) -> tuple[bool, dict[str, Any]]:
+def build(repo: Path, config_path: Path, output: Path, execution_role: str) -> tuple[bool, dict[str, Any]]:
     cfg, records, pins = load_inputs(repo, config_path)
+    fingerprint = _require_execution_role(repo, cfg, execution_role, output)
     failed = {bearing: [row for row in records if row["physical_bearing_id"] == bearing] for bearing in FAILED}
     lobo_predictions: list[dict[str, Any]] = []
     lobo_metrics: list[dict[str, Any]] = []
@@ -455,9 +519,9 @@ def build(repo: Path, config_path: Path, output: Path) -> tuple[bool, dict[str, 
         "", "## Evidence", "",
         f"The shared-run clock maximum absolute residual is `{all_clock_error}` seconds. The primary diagnostic is physical-bearing LOBO (hold out bearing 3, then bearing 4). Five blocked/purged known-bearing folds use a fixed +/-30 timestamp embargo; they are subordinate and non-independent.",
         "", "`metrics.json` records per-bearing metrics before aggregate and worst-bearing summaries, including provisional 50h and 100h proxy-zone alert diagnostics. Undefined rate denominators are JSON null rather than fabricated. `timestamp_predictions.jsonl` contains only the two damaged-bearing supervised diagnostic folds; `censored_clock_tracking.json` records only b1/b2 clock-tracking and alert burden.",
-        "", "The exact clock result means Set 1 endpoint-proxy regression cannot distinguish bearing degradation from the shared experiment clock. Ridge metrics cannot produce a GO state, authorize Set 2, establish probability calibration, support population confidence intervals, identify degradation, prove cross-dataset comparability, or support deployment, maintenance-savings, RUL-accuracy, or generalization claims.",
+        "", "The exact clock result means Set 1 endpoint-proxy regression cannot distinguish bearing degradation from the shared experiment clock. Ridge metrics are reference-runtime-specific diagnostics and cannot produce a GO state, authorize Set 2, establish probability calibration, support population confidence intervals, identify degradation, prove cross-dataset comparability, or support deployment, maintenance-savings, RUL-accuracy, or generalization claims.",
         "", "## Reproduction", "",
-        "This package was built from pinned Phase B physical identities, Phase C physical endpoint proxies/outcomes, and Phase D sensor-local features. It reads no raw IMS recording, does not consume Set 2 or Set 3, writes no model artifact or database/API/dashboard state, and is validated by the raw-free Phase E evidence validator.",
+        "This package was built from pinned Phase B physical identities, Phase C physical endpoint proxies/outcomes, and Phase D sensor-local features. It reads no raw IMS recording, does not consume Set 2 or Set 3, writes no model artifact or database/API/dashboard state, and is validated by the raw-free Phase E evidence validator. The external canonical manifest binds the exact package bytes; two independent canonical candidates matched and the published package passed a metadata-preserving same-input no-op. Canonical bytes are owned by the recorded canonical-publication runtime; portability-validation runs validate structural and scientific invariants but do not claim canonical bytes. The cross-runtime delta audit rejects changed identities, folds, targets, clock/median predictions, clipping, proxy-zone classifications, alert positions/episodes, model ordering, conclusion, Set 2 authorization, or zero-second clock exactness; continuous Ridge deltas are evidence rather than a GO signal.",
         "",
     ])
     payloads: dict[str, bytes] = {
@@ -466,7 +530,7 @@ def build(repo: Path, config_path: Path, output: Path) -> tuple[bool, dict[str, 
         "censored_clock_tracking.json": canonical_json_bytes(censored), "evaluation_summary.json": canonical_json_bytes(summary),
         "validation_report.md": report.encode(),
     }
-    manifest = {"scope_id": SCOPE_ID, "conclusion": conclusion, "input_sha256": pins, "source_sha256": sha256_bytes(_read(Path(__file__), "Phase E source")), "environment_path": "configs/environments/ims_set1_phase_e_reference_v1.json", "output_sha256": {name: sha256_bytes(value) for name, value in payloads.items()}, "output_members": list(OUTPUTS), "raw_data_accessed": False, "phase_c_dependency": "pinned physical endpoint proxies/outcomes only", "set2_accessed": False}
+    manifest = {"scope_id": SCOPE_ID, "conclusion": conclusion, "execution_role": execution_role, "runtime_fingerprint": fingerprint, "input_sha256": pins, "source_sha256": sha256_bytes(_read(Path(__file__), "Phase E source")), "environment_path": "configs/environments/ims_set1_phase_e_reference_v1.json", "output_sha256": {name: sha256_bytes(value) for name, value in payloads.items()}, "output_members": list(OUTPUTS), "raw_data_accessed": False, "phase_c_dependency": "pinned physical endpoint proxies/outcomes only", "set2_accessed": False}
     payloads["evidence_manifest.json"] = canonical_json_bytes(manifest)
     published = _publish(output, payloads)
     return published, summary
@@ -503,12 +567,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--config", type=Path, default=Path("configs/models/ims_set1_phase_e_identifiability_v1.json"))
     parser.add_argument("--output-dir", type=Path, default=Path("reports/evaluation/ims_set1_phase_e_identifiability_v1"))
+    parser.add_argument("--execution-role", choices=sorted(EXECUTION_ROLES), required=True)
     args = parser.parse_args(argv)
     try:
         repo = args.repo_root.resolve()
         config = args.config if args.config.is_absolute() else repo / args.config
         output = args.output_dir if args.output_dir.is_absolute() else repo / args.output_dir
-        published, summary = build(repo, config, output)
+        published, summary = build(repo, config, output, args.execution_role)
         print(json.dumps({"published": published, **summary}, sort_keys=True))
         return 0
     except EvidenceError as error:

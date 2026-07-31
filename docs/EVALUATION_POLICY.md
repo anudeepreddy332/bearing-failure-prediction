@@ -153,3 +153,8 @@ experiment clock, so it cannot distinguish bearing degradation from run position
 next technical priority is an independently governed target with bearing-specific outcome
 timing or a separately authorized external-validation design. Set 2 remains
 external-before-pooling and is not automatically authorized by any Phase E metric.
+
+Phase E's recorded canonical-publication runtime owns its exact diagnostic bytes. A
+portability-validation runtime may validate frozen identities, folds, endpoint-proxy
+targets, zero-second clock exactness, conclusion, and alert discretes, but cannot use
+byte differences in Ridge diagnostics as retuning or selection evidence.

@@ -779,6 +779,27 @@ serving, or any automatic roadmap transition.
 
 ---
 
+### D-036 — Separate Phase E canonical-byte authority from portability validation
+**Decision:** Phase E exact artifact bytes and the external canonical manifest are owned
+by the complete recorded `canonical-publication` runtime fingerprint. A
+`portability-validation` execution is permitted only outside repository publication
+paths: it may validate deterministic internal rebuilds, identities, folds, targets,
+integer-second clock exactness, conclusion, alert discretes, and structural evidence,
+but it cannot claim canonical bytes. The fixed diagnostic Ridge procedure, endpoint
+proxy target, sensor weights, folds, and conclusion remain unchanged.
+**Why:** Ridge numerical bytes can vary across otherwise compatible Python and platform
+runtimes. Treating an Ubuntu/Python 3.11 portability rebuild as required to reproduce
+the recorded canonical Ridge bytes would conflate a continuous implementation delta
+with the shared-clock scientific conclusion. The cross-runtime audit fails closed on
+identity, target, clock, conclusion, threshold, clipping, alert, or model-ordering
+changes; Ridge metrics remain non-GO diagnostics in either mode.
+**Scope boundary:** This does not authorize model retuning, feature selection,
+quantization, labels, temporal features, Set 2/3 access, serving, production claims, or
+an automatic roadmap transition. Exact zero-second clock-oracle evidence and
+`not_identifiable_shared_run_clock_target` remain required in both modes.
+
+---
+
 ## Log format for future entries
 
 ```

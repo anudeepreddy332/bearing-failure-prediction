@@ -34,7 +34,7 @@ Read before making ML, evaluation, documentation, or Set 2 changes:
 - `docs/EVALUATION_POLICY.md`;
 - `reports/evaluation/root_cause_analysis/root_cause_report.md`;
 - `docs/SET2_INTAKE_DESIGN.md`.
-- `docs/decisions/DECISIONS.md` D-035 and
+- `docs/decisions/DECISIONS.md` D-035 through D-036 and
   `reports/evaluation/ims_set1_phase_e_identifiability_v1/validation_report.md`.
 
 Do not make production, broad generalization, or maintenance-savings claims from the
@@ -59,6 +59,9 @@ legacy database evaluation scripts, are the current evaluation authority.
 - Phase E established that the observed-run-end proxy is exactly reproduced by the shared
   experiment clock for Set 1. Do not retune, rank, or promote a model against that proxy
   as bearing-degradation evidence. The fixed Phase E Ridge diagnostic is not a GO signal.
+  Exact Phase E bytes are owned only by the recorded canonical-publication runtime;
+  portability-validation verifies structural/scientific invariants without claiming
+  canonical Ridge bytes.
 
 ## Set 2 boundary
 

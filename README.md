@@ -95,6 +95,11 @@ from the shared experiment clock for this target. The fixed Ridge diagnostic is 
 only to characterize that boundary. It is not a model-selection result and cannot
 authorize Set 2, deployment, maintenance savings, or a production/generalization claim.
 
+Exact Phase E artifact bytes are owned only by the recorded canonical-publication runtime.
+Other compatible environments are portability-validation environments: they can validate
+the frozen identities, folds, targets, zero-second clock oracle, conclusion, and alert
+discretes, but cannot claim canonical Ridge bytes.
+
 Bearings 3 and 4 are the only documented damaged trajectories and are used for LOBO.
 Bearings 1 and 2 are inference-only censored/undocumented-outcome clock-tracking and
 alert-burden observations, not healthy controls or accuracy labels. See

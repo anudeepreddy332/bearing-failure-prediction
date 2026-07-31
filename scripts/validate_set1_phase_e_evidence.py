@@ -17,7 +17,9 @@ if str(REPOSITORY_ROOT) not in sys.path:
 
 from src.data.set1_manifest import sha256_bytes  # noqa: E402
 from src.models.set1_phase_e_identifiability import (  # noqa: E402
+    CANONICAL_PUBLICATION,
     CENSORED,
+    EXECUTION_ROLES,
     FAILED,
     OUTPUTS,
     SCOPE_ID,
@@ -152,7 +154,37 @@ def _check_predictions(
         raise ValidationError("prediction/test coverage mismatch")
 
 
-def validate(repo: Path, config_path: Path, artifacts: Path) -> dict[str, Any]:
+def _validate_canonical_manifest(repo: Path, artifacts: Path, path: Path, values: dict[str, bytes], manifest: dict[str, Any]) -> None:
+    external = _object(_read(path, "Phase E canonical manifest"), "Phase E canonical manifest")
+    expected = {"schema_version", "canonical_directory", "execution_role", "conclusion", "config", "source", "reference_environment", "reference_requirements", "upstream_pins", "artifacts"}
+    _keys(external, expected, "Phase E canonical manifest")
+    if external["schema_version"] != "ims_set1_phase_e_canonical_manifest_v1" or external["canonical_directory"] != "reports/evaluation/ims_set1_phase_e_identifiability_v1" or external["execution_role"] != CANONICAL_PUBLICATION or external["conclusion"] != manifest["conclusion"]:
+        raise ValidationError("canonical manifest metadata mismatch")
+    for key, relative in (("config", "configs/models/ims_set1_phase_e_identifiability_v1.json"), ("source", "src/models/set1_phase_e_identifiability.py"), ("reference_environment", "configs/environments/ims_set1_phase_e_reference_v1.json"), ("reference_requirements", "requirements/ims_set1_phase_e_reference_v1.txt")):
+        pin = external[key]
+        if not isinstance(pin, dict) or set(pin) != {"path", "sha256"} or pin["path"] != relative or sha256_bytes(_read(repo / relative, relative)) != pin["sha256"]:
+            raise ValidationError(f"canonical manifest pin mismatch: {key}")
+    if manifest["source_sha256"] != external["source"]["sha256"]:
+        raise ValidationError("canonical manifest source pin mismatch")
+    if external["upstream_pins"] != manifest["input_sha256"]:
+        raise ValidationError("canonical manifest upstream pin mismatch")
+    environment = _object(_read(repo / external["reference_environment"]["path"], "Phase E reference environment"), "Phase E reference environment")
+    if manifest["runtime_fingerprint"] != environment.get("canonical_runtime"):
+        raise ValidationError("canonical runtime fingerprint mismatch")
+    listed = external["artifacts"]
+    if not isinstance(listed, list) or len(listed) != len(OUTPUTS):
+        raise ValidationError("canonical manifest artifact list mismatch")
+    expected_members = []
+    for name in OUTPUTS:
+        value = values[name]
+        expected_members.append({"filename": name, "byte_size": len(value), "sha256": sha256_bytes(value)})
+    if listed != expected_members:
+        raise ValidationError("canonical manifest artifact bytes mismatch")
+
+
+def validate(repo: Path, config_path: Path, artifacts: Path, mode: str, canonical_manifest: Path | None = None) -> dict[str, Any]:
+    if mode not in EXECUTION_ROLES:
+        raise ValidationError("explicit valid validation mode is required")
     try:
         cfg, records, pins = load_inputs(repo, config_path)
     except EvidenceError as error:
@@ -179,14 +211,22 @@ def validate(repo: Path, config_path: Path, artifacts: Path) -> dict[str, Any]:
     if metrics.get("ridge_inputs") != [f"phase_d_feature_{index}_{stat}" for index in range(11, 18) for stat in ("mean", "population_std")]:
         raise ValidationError("Ridge allowlist mismatch")
     manifest = _object(values["evidence_manifest.json"], "evidence manifest")
-    expected_manifest_keys = {"scope_id", "conclusion", "input_sha256", "source_sha256", "environment_path", "output_sha256", "output_members", "raw_data_accessed", "phase_c_dependency", "set2_accessed"}
+    expected_manifest_keys = {"scope_id", "conclusion", "execution_role", "runtime_fingerprint", "input_sha256", "source_sha256", "environment_path", "output_sha256", "output_members", "raw_data_accessed", "phase_c_dependency", "set2_accessed"}
     _keys(manifest, expected_manifest_keys, "evidence manifest")
     if manifest["input_sha256"] != pins or manifest["output_members"] != list(OUTPUTS) or manifest["raw_data_accessed"] is not False or manifest["set2_accessed"] is not False:
         raise ValidationError("evidence manifest provenance mismatch")
+    if manifest["execution_role"] != mode or not isinstance(manifest["runtime_fingerprint"], dict):
+        raise ValidationError("evidence execution role mismatch")
     output_hashes = {name: sha256_bytes(values[name]) for name in OUTPUTS if name != "evidence_manifest.json"}
     if manifest["output_sha256"] != output_hashes:
         raise ValidationError("evidence manifest output hashes mismatch")
-    return {"accepted": True, "scope_id": SCOPE_ID, "conclusion": summary["conclusion"], "prediction_rows": len(predictions), "fold_count": len(assignments), "input_sha256": pins, "output_sha256": {name: sha256_bytes(values[name]) for name in OUTPUTS}}
+    if mode == CANONICAL_PUBLICATION:
+        if canonical_manifest is None:
+            raise ValidationError("canonical validation requires external manifest")
+        _validate_canonical_manifest(repo, artifacts, canonical_manifest, values, manifest)
+    elif canonical_manifest is not None:
+        raise ValidationError("portability validation cannot claim canonical manifest")
+    return {"accepted": True, "mode": mode, "scope_id": SCOPE_ID, "conclusion": summary["conclusion"], "prediction_rows": len(predictions), "fold_count": len(assignments), "input_sha256": pins, "output_sha256": {name: sha256_bytes(values[name]) for name in OUTPUTS}}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -194,11 +234,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", type=Path, default=REPOSITORY_ROOT)
     parser.add_argument("--config", type=Path, default=Path("configs/models/ims_set1_phase_e_identifiability_v1.json"))
     parser.add_argument("--artifacts", type=Path, required=True)
+    parser.add_argument("--mode", choices=sorted(EXECUTION_ROLES), required=True)
+    parser.add_argument("--canonical-manifest", type=Path)
     args = parser.parse_args(argv)
     repo = args.repo_root.resolve()
     config = args.config if args.config.is_absolute() else repo / _relative(str(args.config), "config")
     try:
-        print(json.dumps(validate(repo, config, args.artifacts), sort_keys=True))
+        manifest = args.canonical_manifest if args.canonical_manifest is None or args.canonical_manifest.is_absolute() else repo / _relative(str(args.canonical_manifest), "canonical manifest")
+        print(json.dumps(validate(repo, config, args.artifacts, args.mode, manifest), sort_keys=True))
         return 0
     except ValidationError as error:
         print(f"Phase E validation failure: {error}", file=sys.stderr)
