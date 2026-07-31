@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -90,9 +91,9 @@ def test_config_rejects_changed_allowlist(tmp_path: Path) -> None:
 
 def test_build_is_deterministic_and_second_run_is_noop(tmp_path: Path) -> None:
     output = tmp_path / "evidence"
-    first, summary = phase_e.build(REPO, CONFIG, output)
+    first, summary = phase_e.build(REPO, CONFIG, output, phase_e.PORTABILITY_VALIDATION)
     before = {path.name: path.read_bytes() for path in output.iterdir()}
-    second, repeat = phase_e.build(REPO, CONFIG, output)
+    second, repeat = phase_e.build(REPO, CONFIG, output, phase_e.PORTABILITY_VALIDATION)
     assert first is True and second is False
     assert summary == repeat
     assert {path.name: path.read_bytes() for path in output.iterdir()} == before
@@ -101,9 +102,27 @@ def test_build_is_deterministic_and_second_run_is_noop(tmp_path: Path) -> None:
 
 def test_existing_different_output_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "evidence"
-    phase_e.build(REPO, CONFIG, output)
+    phase_e.build(REPO, CONFIG, output, phase_e.PORTABILITY_VALIDATION)
     target = output / "metrics.json"
     before = target.read_bytes()
     target.write_bytes(before + b"x")
     with pytest.raises(phase_e.EvidenceError, match="differs"):
-        phase_e.build(REPO, CONFIG, output)
+        phase_e.build(REPO, CONFIG, output, phase_e.PORTABILITY_VALIDATION)
+
+
+def test_portability_role_rejects_repository_publication(tmp_path: Path) -> None:
+    cfg, _, _ = phase_e.load_inputs(REPO, CONFIG)
+    with pytest.raises(phase_e.EvidenceError, match="cannot publish"):
+        phase_e._require_execution_role(REPO, cfg, phase_e.PORTABILITY_VALIDATION, REPO / "reports" / tmp_path.name)
+
+
+def test_canonical_role_requires_recorded_fingerprint(monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg, _, _ = phase_e.load_inputs(REPO, CONFIG)
+    expected = json.loads((REPO / cfg["reference_environment"]["path"]).read_text())["canonical_runtime"]
+    monkeypatch.setattr(phase_e, "runtime_fingerprint", lambda: expected)
+    monkeypatch.setattr(phase_e, "threadpool_limits", lambda **_: nullcontext())
+    output = REPO / "reports/evaluation/ims_set1_phase_e_identifiability_v1"
+    assert phase_e._require_execution_role(REPO, cfg, phase_e.CANONICAL_PUBLICATION, output) == expected
+    monkeypatch.setattr(phase_e, "runtime_fingerprint", lambda: {"wrong": True})
+    with pytest.raises(phase_e.EvidenceError, match="fingerprint"):
+        phase_e._require_execution_role(REPO, cfg, phase_e.CANONICAL_PUBLICATION, output)

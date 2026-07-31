@@ -7,7 +7,7 @@
   "phase_d_features": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/sensor_observation_base_features.jsonl", "sha256": "1248745eeaab2f2be395c01f961d6e0a801c2837b0f282dde5ab0038ad2ea60f"},
   "phase_d_feature_definitions": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/feature_definitions.json", "sha256": "88eafb6cf54420dcaec96e6f623c2b4106c710c00bdd57a8aa53ebc2bcfc804d"},
   "phase_d_feature_config": {"path": "configs/features/ims_set1_sensor_local_base_v1.json", "sha256": "c586d816c0710a289aa669e8d57b6702fa099ad24dd94b5e58b8714f51c5fdcf"},
-  "reference_environment": {"path": "configs/environments/ims_set1_phase_e_reference_v1.json", "sha256": "fa43b4beb463b4432901243adbd4889944ba72010f58c749fccb67260b197480"},
+  "reference_environment": {"path": "configs/environments/ims_set1_phase_e_reference_v1.json", "sha256": "3dc11d443eccdd348d4f845a6c6394afd8be7c39f376c726073f65c5fdc151e9"},
   "reference_requirements": {"path": "requirements/ims_set1_phase_e_reference_v1.txt", "sha256": "b79770ef10d5879b2b0ab9b5881b453de16144a657d25bbbac4083b12d3978c9"},
   "failed_bearings": ["bearing_3", "bearing_4"],
   "censored_bearings": ["bearing_1", "bearing_2"],
