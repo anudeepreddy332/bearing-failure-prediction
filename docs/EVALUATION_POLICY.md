@@ -147,6 +147,9 @@ model that catches failures only by flagging everything as critical is not usefu
 
 ## Current Technical Priority
 
-Do not productionize the API/dashboard yet. The next technical step is to retune
-the model using this leakage-safe, business-aligned objective and preserve all
-validation outputs for comparison.
+Do not productionize the API/dashboard or retune against the observed-run-end proxy
+yet. Phase E established that this Set 1 target is exactly recoverable from the shared
+experiment clock, so it cannot distinguish bearing degradation from run position. The
+next technical priority is an independently governed target with bearing-specific outcome
+timing or a separately authorized external-validation design. Set 2 remains
+external-before-pooling and is not automatically authorized by any Phase E metric.
