@@ -1,0 +1,21 @@
+{
+  "scope_id": "ims_set1_phase_e_identifiability_v1",
+  "schema_version": "ims_set1_phase_e_identifiability_v1",
+  "phase_b_summary": {"path": "data/canonical/ims_set1/v1/canonicalization_summary.json", "sha256": "1ecc9aa095c4d364bb0f65bf6baf2c4f0a891192b0ea38a64f7b98e441e81361"},
+  "phase_c_summary": {"path": "data/canonical/ims_set1_outcomes/v1/labeling_summary.json", "sha256": "9cda60864f796aae65008ac00fa8ca15613cccab0bf25a519343303a7ff981ea"},
+  "phase_d_manifest": {"path": "data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json", "sha256": "2a81a75fa6c467557678155b6ae398be2d4d1cfa6aafc7750c0c06c613c49dac"},
+  "phase_d_features": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/sensor_observation_base_features.jsonl", "sha256": "1248745eeaab2f2be395c01f961d6e0a801c2837b0f282dde5ab0038ad2ea60f"},
+  "phase_d_feature_definitions": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/feature_definitions.json", "sha256": "88eafb6cf54420dcaec96e6f623c2b4106c710c00bdd57a8aa53ebc2bcfc804d"},
+  "phase_d_feature_config": {"path": "configs/features/ims_set1_sensor_local_base_v1.json", "sha256": "c586d816c0710a289aa669e8d57b6702fa099ad24dd94b5e58b8714f51c5fdcf"},
+  "reference_environment": {"path": "configs/environments/ims_set1_phase_e_reference_v1.json", "sha256": "fa43b4beb463b4432901243adbd4889944ba72010f58c749fccb67260b197480"},
+  "reference_requirements": {"path": "requirements/ims_set1_phase_e_reference_v1.txt", "sha256": "b79770ef10d5879b2b0ab9b5881b453de16144a657d25bbbac4083b12d3978c9"},
+  "failed_bearings": ["bearing_3", "bearing_4"],
+  "censored_bearings": ["bearing_1", "bearing_2"],
+  "condition_feature_indices": [11, 12, 13, 14, 15, 16, 17],
+  "ridge": {"alpha": 1.0, "fit_intercept": true, "solver": "svd", "clip_nonnegative": true},
+  "sensor_weight": 0.5,
+  "blocked_fold_count": 5,
+  "embargo_timestamps": 30,
+  "proxy_zone_hours": [50, 100],
+  "output_members": ["fold_assignments.jsonl", "timestamp_predictions.jsonl", "metrics.json", "shared_run_clock_reference.json", "censored_clock_tracking.json", "evaluation_summary.json", "validation_report.md", "evidence_manifest.json"]
+}

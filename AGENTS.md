@@ -21,10 +21,11 @@ Leakage-safe Phase 1 is the performance source of truth:
 | Leave-One-Bearing-Out (LOBO) | about 226.46h | Primary Set 1 unseen-bearing estimate; poor and unstable |
 | Purged time-series CV | about 122.00h | Known-bearing temporal estimate after purge; still poor |
 
-Set 1 has only two complete failed physical-bearing trajectories: bearings 3 and 4.
-Bearings 1 and 2 are censored and are not ordinary RUL-regression examples. The small
-number of failed trajectories makes all current generalization evidence statistically
-thin.
+Set 1 has only two complete damaged physical-bearing trajectories: bearings 3 and 4.
+Bearings 1 and 2 have no documented terminal damage before observation end; Phase E uses
+them only for inference-side clock-tracking and alert burden, never as ordinary
+RUL-regression examples, healthy controls, or outcome labels. The small number of failed
+trajectories makes all current generalization evidence statistically thin.
 
 Read before making ML, evaluation, documentation, or Set 2 changes:
 
@@ -33,6 +34,8 @@ Read before making ML, evaluation, documentation, or Set 2 changes:
 - `docs/EVALUATION_POLICY.md`;
 - `reports/evaluation/root_cause_analysis/root_cause_report.md`;
 - `docs/SET2_INTAKE_DESIGN.md`.
+- `docs/decisions/DECISIONS.md` D-035 and
+  `reports/evaluation/ims_set1_phase_e_identifiability_v1/validation_report.md`.
 
 Do not make production, broad generalization, or maintenance-savings claims from the
 historical artifact or from Set 1 alone. Do not select a model using a row-level split.
@@ -53,6 +56,9 @@ legacy database evaluation scripts, are the current evaluation authority.
   data only within each fold. Preserve prior reports and write new outputs separately.
 - The current critical (RUL <= 50h) and warning (RUL <= 100h) thresholds are provisional
   project conventions, not business-approved operating thresholds.
+- Phase E established that the observed-run-end proxy is exactly reproduced by the shared
+  experiment clock for Set 1. Do not retune, rank, or promote a model against that proxy
+  as bearing-degradation evidence. The fixed Phase E Ridge diagnostic is not a GO signal.
 
 ## Set 2 boundary
 
@@ -83,12 +89,10 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-`pytest tests/` currently collects 31 focused, DB-free tests:
-
-- 14 tests for pure functions in `src/preprocess.py`;
-- 10 tests for `src/temporal_features.py`;
-- 7 tests for offline-validation split and leakage-prevention helpers in
-  `src/models/offline_validation.py`.
+`pytest tests/` includes DB-free Phase A-E and legacy focused tests. The exact collected
+count is reported by the current CI/evidence report; do not preserve the historical
+31-test count as current guidance. The suite still does not exercise a live Postgres
+pipeline, serving interface, raw-data rebuild, or Set 2/3 workflow.
 
 `ruff check .` uses the conservative configuration in `pyproject.toml`. The legacy
 Postgres data, feature, training, tuning, evaluation, API, dashboard, and integration

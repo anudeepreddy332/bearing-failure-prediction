@@ -1,0 +1,1 @@
+{"schema_version":"ims_set1_phase_e_reference_environment_v1","role":"compatible_diagnostic_reference","numpy":"2.2.6","pandas":"2.3.2","scipy":"1.16.1","scikit_learn":"1.7.2","requirements_file":"requirements/ims_set1_phase_e_reference_v1.txt"}

@@ -745,6 +745,40 @@ documentation corrections remain deferred P1 work.
 
 ---
 
+### D-035 — Bound Set 1 endpoint-proxy diagnostics by shared-clock non-identifiability
+**Decision:** Phase E may join pinned Phase B physical identities, Phase C physical
+endpoint proxies/outcomes, and Phase D sensor-local base features for a fixed Set 1
+identifiability diagnostic. The only condition inputs are the mean and population
+standard-deviation aggregates for Phase D registry indices 11 through 17. They remain
+`candidate_for_later_review_not_proven_comparable`; this is an a-priori, Set 1-only
+diagnostic allowlist, not Phase D feature selection or a cross-dataset comparability
+claim. The evaluation reports a fold-local training-target median, an explicit
+shared-run clock reference, and a fixed Ridge(alpha=1.0, fit_intercept=True,
+solver=svd) diagnostic with fold-local imputation/scaling. Two sensor views receive
+weight 0.5 each and aggregate at the physical-bearing timestamp.
+**Why:** Every Set 1 bearing shares one experiment clock and the historical endpoint
+proxy is exactly wall-clock time to the observed run endpoint. A feature model can
+appear to predict that proxy without identifying bearing degradation. The clock oracle
+must therefore be an explicit, exact reference rather than an unacknowledged leakage
+path.
+**Evidence boundary:** Bearings 3 and 4 are the only documented damaged trajectories
+and are the sole LOBO fitting/evaluation trajectories. Bearings 1 and 2 are inference-
+only censored/undocumented-outcome clock-tracking and alert-burden observations; they
+are not healthy controls, negative-control labels, accuracy observations, or event-free
+claims. The endpoint proxy is not true RUL, a failure time, a time bound, survival
+duration, or damage-onset time. The only valid terminal conclusion is
+`not_identifiable_shared_run_clock_target` when all pin, join, fold, aggregation,
+clock-exactness, and determinism gates pass; otherwise it is `invalid_evidence`.
+**Scope boundary:** Ridge metrics cannot create a GO state, select a model, authorize
+Set 2, establish calibration or population confidence intervals, identify degradation,
+or support production, deployment, maintenance-savings, RUL-accuracy, or generalization
+claims. The five blocked/purged known-bearing folds with a fixed +/-30 timestamp embargo
+are subordinate non-independent diagnostics. This decision does not authorize Set 2/3
+access, temporal features, feature selection, tuning, training artifacts, Postgres,
+serving, or any automatic roadmap transition.
+
+---
+
 ## Log format for future entries
 
 ```

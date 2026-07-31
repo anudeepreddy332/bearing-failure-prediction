@@ -23,14 +23,14 @@ anywhere** and cannot be filled without new code. Details below.
 > `data/canonical/ims_set1_outcomes/v1/`; it does not create true RUL labels.
 >
 > Phase D target-independent sensor-local base features were verified by two independent
-> temporary full extractions and then published locally at the approved canonical path
+> temporary full extractions and then published at the approved canonical path
 > `data/canonical/ims_set1_sensor_local_base_features/v1`. The same-input rerun was
 > byte- and metadata-preserving and reported `published: false`. Reproduce with the
 > pinned config using: `python -m src.features.set1_sensor_local_base
 > --repo-root . --config configs/features/ims_set1_sensor_local_base_v1.json
 > --output-dir data/canonical/ims_set1_sensor_local_base_features/v1`. Raw IMS recordings
 > are not tracked and must be separately provisioned to reproduce from source. The
-> canonical output is local and not yet Git-tracked or committed until Gate C. Phase D
+> canonical output is committed as canonical evidence. Phase D
 > consumes only pinned Phase A/B evidence, does not read Phase C outcomes, and creates no
 > labels. The recorded reference environment at
 > `configs/environments/ims_set1_phase_d_reference_v1.json` is provenance, not a runtime
@@ -45,6 +45,16 @@ anywhere** and cannot be filled without new code. Details below.
 > NumPy constraint, and runs this raw-free canonical validator for pushes and pull
 > requests to `main` and `production-readiness-refactor`; it neither regenerates features
 > nor certifies Linux as a publication runtime.
+>
+> Phase E is a DB-free, raw-free identifiability diagnostic over the pinned Phase B
+> physical graph, Phase C endpoint proxies/outcomes, and Phase D features. It writes no
+> deployable model. Build it with `python -m src.models.set1_phase_e_identifiability
+> --repo-root . --config configs/models/ims_set1_phase_e_identifiability_v1.json
+> --output-dir reports/evaluation/ims_set1_phase_e_identifiability_v1`, then validate it
+> with `python scripts/validate_set1_phase_e_evidence.py --repo-root . --artifacts
+> reports/evaluation/ims_set1_phase_e_identifiability_v1`. The target is a shared-run
+> observed-endpoint proxy, not true RUL. Phase E’s zero-residual clock reference establishes
+> non-identifiability of bearing degradation from that target and does not authorize Set 2.
 
 ---
 
