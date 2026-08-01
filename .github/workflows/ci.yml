@@ -36,6 +36,12 @@ jobs:
           --canonical-manifest
           data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json
 
+      - name: Validate Set 2/3 source registration evidence
+        run: >
+          python scripts/validate_sets23_source_registration.py --repo-root .
+          --config configs/datasets/ims_sets23_source_packages_v1.json
+          --artifacts data/manifests/ims_sets23_source_packages/v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)
