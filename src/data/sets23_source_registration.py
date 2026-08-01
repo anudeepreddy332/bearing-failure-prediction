@@ -180,13 +180,57 @@ def load_config(path: Path) -> tuple[dict[str, Any], list[PackageSpec], str, str
     return config, specs, sha256_bytes(raw), sha256_bytes(canonical_json_bytes(config))
 
 
-def _stable_hash(path: Path) -> tuple[str, int, int]:
+def _snapshot_state(value: os.stat_result) -> tuple[int, int, int, int, int]:
+    """Return the fields that bind a source pathname to its opened descriptor."""
+    return value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns
+
+
+def _source_lstat(path: Path) -> os.stat_result:
     try:
-        before = os.stat(path, follow_symlinks=False)
+        value = os.stat(path, follow_symlinks=False)
     except OSError as error:
         raise SourcePackageRegistrationError(f"missing source package: {path}") from error
-    if not stat.S_ISREG(before.st_mode):
+    if not stat.S_ISREG(value.st_mode):
         raise SourcePackageRegistrationError(f"source package is not a regular file: {path}")
+    return value
+
+
+def _index_archive_descriptor(descriptor: int, spec: PackageSpec, package_hash: str) -> list[dict[str, Any]]:
+    """Index only the already-open no-follow archive descriptor.
+
+    `/dev/fd/<n>` plus `pass_fds` is supported by the project publication hosts
+    (macOS and Linux). The descriptor is rewound before the child opens it, then
+    its metadata and the source pathname are checked by the caller afterwards.
+    """
+    descriptor_path = f"/dev/fd/{descriptor}"
+    try:
+        result = subprocess.run(
+            ["bsdtar", "-tvf", descriptor_path],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            pass_fds=(descriptor,),
+        )
+    except (OSError, UnicodeError) as error:
+        raise SourcePackageRegistrationError(f"cannot index archive metadata from source snapshot: {spec.dataset_id}") from error
+    if result.returncode != 0 or result.stderr:
+        raise SourcePackageRegistrationError(f"archive metadata index failed: {spec.dataset_id}")
+    rows = _parse_bsdtar_listing(result.stdout, spec, package_hash)
+    if len(rows) != spec.archive_index_contract["expected_member_count"]:
+        raise SourcePackageRegistrationError(f"archive member count mismatch: {spec.dataset_id}")
+    return rows
+
+
+def _hash_and_index_snapshot(path: Path, spec: PackageSpec) -> tuple[str, int, list[dict[str, Any]]]:
+    """Hash and metadata-index one stable no-follow archive snapshot.
+
+    Both operations use one file descriptor. Comparing descriptor and pathname
+    metadata before and after the index rejects replacement or mutation at any
+    point in the source-identity operation.
+    """
+    before = _source_lstat(path)
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(path, flags)
@@ -195,18 +239,25 @@ def _stable_hash(path: Path) -> tuple[str, int, int]:
     digest = hashlib.sha256()
     try:
         opened = os.fstat(descriptor)
-        if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns):
-            raise SourcePackageRegistrationError(f"source package changed before hashing: {path}")
+        if _snapshot_state(before) != _snapshot_state(opened):
+            raise SourcePackageRegistrationError(f"source package changed before snapshot: {path}")
         while chunk := os.read(descriptor, 1024 * 1024):
             digest.update(chunk)
-        after_open = os.fstat(descriptor)
+        if _snapshot_state(before) != _snapshot_state(os.fstat(descriptor)):
+            raise SourcePackageRegistrationError(f"source package changed during hashing: {path}")
+        try:
+            os.lseek(descriptor, 0, os.SEEK_SET)
+        except OSError as error:
+            raise SourcePackageRegistrationError(f"cannot rewind source snapshot: {path}") from error
+        rows = _index_archive_descriptor(descriptor, spec, digest.hexdigest())
+        if _snapshot_state(before) != _snapshot_state(os.fstat(descriptor)):
+            raise SourcePackageRegistrationError(f"source package changed during metadata indexing: {path}")
+        after = _source_lstat(path)
+        if _snapshot_state(before) != _snapshot_state(after):
+            raise SourcePackageRegistrationError(f"source package pathname changed during source snapshot: {path}")
     finally:
         os.close(descriptor)
-    after = os.stat(path, follow_symlinks=False)
-    state = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns)
-    if state(before) != state(after_open) or state(before) != state(after):
-        raise SourcePackageRegistrationError(f"source package changed during hashing: {path}")
-    return digest.hexdigest(), before.st_size, before.st_mtime_ns // 1_000_000_000
+    return digest.hexdigest(), before.st_size, rows
 
 
 def _parse_bsdtar_listing(listing: str, spec: PackageSpec, package_hash: str) -> list[dict[str, Any]]:
@@ -260,31 +311,15 @@ def _validate_archive_member_candidate(
     _safe_relative_path(name, "archive_member_path")
 
 
-def index_archive(path: Path, spec: PackageSpec, package_hash: str) -> list[dict[str, Any]]:
-    try:
-        result = subprocess.run(["bsdtar", "-tvf", str(path)], check=False, capture_output=True, text=True, encoding="utf-8", errors="strict")
-    except (OSError, UnicodeError) as error:
-        raise SourcePackageRegistrationError(f"cannot index archive metadata: {path}") from error
-    if result.returncode != 0 or result.stderr:
-        raise SourcePackageRegistrationError(f"archive metadata index failed: {spec.dataset_id}")
-    rows = _parse_bsdtar_listing(result.stdout, spec, package_hash)
-    if len(rows) != spec.archive_index_contract["expected_member_count"]:
-        raise SourcePackageRegistrationError(f"archive member count mismatch: {spec.dataset_id}")
-    return rows
-
-
 def _artifact_bytes(config_path: Path, source_root: Path) -> dict[str, bytes]:
     config, specs, config_file_hash, config_semantic_hash = load_config(config_path)
     package_rows: list[dict[str, Any]] = []
     archive_rows: list[dict[str, Any]] = []
     for spec in specs:
         path = source_root / Path(PurePosixPath(spec.local_relative_path))
-        actual_hash, size, observed_mtime = _stable_hash(path)
+        actual_hash, size, rows = _hash_and_index_snapshot(path, spec)
         if actual_hash != spec.expected_sha256 or size != spec.expected_byte_size:
             raise SourcePackageRegistrationError(f"source package hash or size drift: {spec.dataset_id}")
-        if observed_mtime != spec.acquisition["local_mtime_epoch_seconds"]:
-            raise SourcePackageRegistrationError(f"source package local mtime drift: {spec.dataset_id}")
-        rows = index_archive(path, spec, actual_hash)
         archive_rows.extend(rows)
         package_rows.append({
             "acquisition": spec.acquisition,
