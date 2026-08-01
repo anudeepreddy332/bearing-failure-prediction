@@ -190,6 +190,23 @@ Citation: Lee, J., Qiu, H., Yu, G., Lin, J., & Rexnord Technical Services
 (2007). "IMS, University of Cincinnati. Bearing Data Set", NASA Prognostics
 Data Repository.
 
+### Set 2/3 Source Registration
+
+Phase F registers ignored local source packages without extracting recordings, parsing
+signals, assigning outcomes, or consuming either dataset. `data/raw/set2/2nd_test.rar`
+and `data/raw/set3/3rd_test.rar` are local, untracked archives. Their tracked hashes,
+metadata-only archive indexes, provenance limits, and unconsumed state are under
+`data/manifests/ims_sets23_source_packages/v1/` and can be checked without raw data:
+
+```bash
+python scripts/validate_sets23_source_registration.py --repo-root .
+```
+
+Set 2 is only a conditional future development-evidence candidate. Set 3 is only a
+conditional future external-holdout candidate. Neither role is frozen, and source
+registration does not authorize Set 2/3 identity construction, outcomes, features,
+evaluation, pooling, model work, or serving.
+
 ---
 
 ## License

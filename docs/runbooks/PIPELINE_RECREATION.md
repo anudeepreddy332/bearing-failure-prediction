@@ -61,6 +61,16 @@ anywhere** and cannot be filled without new code. Details below.
 > not canonical bytes. The target is a shared-run
 > observed-endpoint proxy, not true RUL. Phase E’s zero-residual clock reference establishes
 > non-identifiability of bearing degradation from that target and does not authorize Set 2.
+>
+> Phase F source registration is DB-free and does not parse recordings. When the ignored
+> local packages have been separately provisioned at `data/raw/set2/2nd_test.rar` and
+> `data/raw/set3/3rd_test.rar`, register or strictly no-op validate them with
+> `python -m src.data.sets23_source_registration --repo-root . --config
+> configs/datasets/ims_sets23_source_packages_v1.json --output-dir
+> data/manifests/ims_sets23_source_packages/v1`. Validate the committed registration
+> evidence in a raw-free checkout using `python scripts/validate_sets23_source_registration.py
+> --repo-root .`. This neither extracts recordings nor consumes Set 2/3; it does not
+> authorize any identity, label, feature, evaluation, model, or serving work.
 
 ---
 
@@ -143,11 +153,13 @@ it ingests parquet, not raw) then `compute_stats.py`, and **omits both
 verbatim produces an unlabeled, temporal-feature-less table. The verified order above
 supersedes it.
 
-### GAP 4 — only Set 1 is reproducible
-`data/raw/set1/1st_test/` has all 2,156 timestamped recording files. `data/raw/set2/` contains only an
-unextracted `2nd_test.rar`; `data/raw/set3/` is empty. So from truly-raw inputs only
-Set 1 can be rebuilt. (This intersects the Phase-2 plan to ingest Sets 2/3 for
-Leave-One-Bearing-Out validation — those raw files must be sourced/extracted first.)
+### GAP 4 — only Set 1 has a canonical parsed-recording foundation
+`data/raw/set1/1st_test/` has all 2,156 timestamped recording files and the separately
+authorized Phase A/B canonical foundation. Phase F now registers ignored local
+`2nd_test.rar` and recovered `3rd_test.rar` packages, but neither package has been
+extracted into recordings or consumed. Therefore only Set 1 can currently be rebuilt by
+the canonical raw-recording path. Set 2/3 registration does not authorize their identity,
+outcome, feature, evaluation, or modeling work.
 
 ### Minor — schema vs. dynamic columns
 `001_schema.sql` hand-lists a *subset* of temporal columns with slightly different names
