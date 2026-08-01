@@ -65,9 +65,13 @@ legacy database evaluation scripts, are the current evaluation authority.
 
 ## Set 2 boundary
 
-Set 2 is documentation-approved only; implementation has not started. Do not extract
-it, generate features, train, tune, pool data, change serving artifacts, or use it in an
-evaluation without separate human authorization and the documented gates.
+Phase F registers local Set 2 and Set 3 archive packages as **unconsumed** source
+evidence only. It does not extract recordings, parse signals, create identities or
+outcomes, or authorize evaluation. The tracked raw-free registration evidence is in
+`data/manifests/ims_sets23_source_packages/v1/`; the ignored local archives remain under
+`data/raw/set2/2nd_test.rar` and `data/raw/set3/3rd_test.rar` when separately provisioned.
+Set 2 remains documentation-approved only for future intake, and Set 3 has no frozen
+role. Do not implement either dataset without separate human authorization and gates.
 
 `common_sensor_view_v1` is the approved future cross-dataset contract:
 
@@ -82,7 +86,8 @@ evaluation without separate human authorization and the documented gates.
 
 The permitted pre-consumption checks and the point at which Set 2 becomes consumed are
 defined in `docs/SET2_INTAKE_DESIGN.md` and D-027. Documentation approval is not
-implementation authorization.
+implementation authorization. See `docs/SET3_INTAKE_DESIGN.md` and D-037 for the
+parallel Set 3 source boundary.
 
 ## Environment and tests
 

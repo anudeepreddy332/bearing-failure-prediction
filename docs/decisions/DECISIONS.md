@@ -800,6 +800,32 @@ an automatic roadmap transition. Exact zero-second clock-oracle evidence and
 
 ---
 
+### D-037 — Register Set 2/3 source packages without consuming either dataset
+**Decision:** Phase F may register the ignored local Set 2 and Set 3 RAR packages through
+exact package hashes, byte sizes, local timestamps, provenance limits, and a metadata-only
+archive index. Set 3 is derived from the recorded outer `IMS.zip` member
+`IMS/3rd_test.rar`; the outer archive was deleted only after exact staged-to-final byte
+verification, deterministic manifest agreement, and preservation of its hash/CRC evidence.
+Set 2 remains local-only and was not extracted. Both packages have
+`consumption_state=unconsumed`.
+**Why:** The project needs durable evidence of which local source bytes are available
+before any future cross-dataset design can be considered. Registration preserves source
+identity without silently treating downloaded data as verified training or holdout input.
+**Evidence boundary:** Archive indexing is limited to safe member names, types, and sizes.
+No signal payloads were parsed. The Set 3 outer member name is `3rd_test.rar`, while the
+observed inner metadata root is `4th_test/txt`; this discrepancy is recorded, not
+adjudicated. Local hashes prove later byte stability, not publisher authenticity, license,
+or original acquisition provenance. The outer archive's deletion does not erase its
+recorded hash, size, member path, or CRC evidence.
+**Scope boundary:** This decision does not authorize Set 2/3 extraction into signals,
+identity construction, outcome evidence, feature generation, `common_sensor_view_v1`,
+splits, evaluation, training, tuning, pooling, serving, or a final development/holdout
+role. Intended roles remain conditional: Set 2 may later be development evidence and Set
+3 may later be an untouched external holdout, subject to separate decisions and gates.
+Phase E remains `not_identifiable_shared_run_clock_target` and `set2_authorized=false`.
+
+---
+
 ## Log format for future entries
 
 ```

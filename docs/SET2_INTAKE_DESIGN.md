@@ -218,6 +218,16 @@ training folds. The existing tuned model cannot be used for a valid Set 2 claim.
 - An observed checksum proves later byte stability, not source authenticity. Absence
   of a publisher checksum remains visible in the manifest.
 
+### 5.2 Phase F source-registration status
+
+Phase F records the existing ignored `data/raw/set2/2nd_test.rar` package, its exact
+local hash and byte size, and a metadata-only archive index in
+`data/manifests/ims_sets23_source_packages/v1/`. This is source registration, not Set 2
+consumption. No archive member was extracted for this registration, no signal payload was
+parsed, and no Set 2 identity, outcome, feature, split, evaluation, model, or serving
+artifact exists. The package remains a conditional development-evidence candidate only;
+the external-before-pooling rule remains in force.
+
 ### 5.2 Permitted integrity checks and consumption boundary
 
 Before intake approval, permitted Set 2 checks are read-only archive access, byte-size
