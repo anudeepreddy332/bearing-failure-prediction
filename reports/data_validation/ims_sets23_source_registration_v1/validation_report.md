@@ -49,8 +49,13 @@ a role, outcome, failure event, or equivalence claim.
 
 ## Validation boundary
 
-The registrar uses stable no-follow source hashing and `bsdtar` member metadata listing.
-It does not extract or open recording payloads. The available listing tool cannot
+The registrar hashes and metadata-indexes each package through one open no-follow file
+descriptor. `bsdtar` receives that descriptor through `/dev/fd` with descriptor passing;
+descriptor and pathname metadata are checked before and after indexing, so replacement or
+in-place mutation during the combined operation fails closed. Package identity is governed
+by SHA-256 and byte size. The recorded local mtime remains descriptive acquisition
+provenance and is not an acceptance gate, so identical package bytes remain portable across
+filesystem timestamp changes. It does not extract or open recording payloads. The available listing tool cannot
 independently establish inner-member encryption state, so that status is explicitly
 `metadata_indexed_encryption_not_verified`. The raw-free validator verifies the tracked
 config, schemas, hashes, order, package linkage, counts, unconsumed state, and absence of
@@ -62,13 +67,13 @@ evaluations, or serving artifacts were created. Phase E's Set 1 conclusion remai
 
 ## Verification
 
-The focused source-registration suite collected and passed 19 tests. The complete DB-free
-suite collected 408 tests and was run in bounded module groups under the isolated source
+The focused source-registration suite collected and passed 24 tests. The complete DB-free
+suite collected and passed 413 tests in the isolated source
 tree; every group completed without a failure. Existing preprocessing numerical warnings
 remain warnings from legacy tests, not Phase F failures. `ruff check .` and
 `git diff --check` passed. The Phase D and Phase E raw-free validators also passed.
 
 The live registrar was run a second time against the local ignored source packages and
-returned `published: false`. The tracked source-registration validator passed without
+returned `published: false` after the descriptor-backed source snapshot repair. The tracked source-registration validator passed without
 requiring `data/raw`, proving that CI can check the recorded evidence independently of
 the developer-local archives.
