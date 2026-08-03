@@ -1,6 +1,7 @@
 # Set 2 Intake Architecture and Terra Handoff Plan
 
-**Status:** Architecture approved for planning; implementation not started
+**Status:** Historical intake architecture. Phase H records only the documented Set 2
+channel map; no outcome adjudication or dataset-use decision has been made.
 **Scope:** IMS Set 2 immutable intake, canonical representation, validation, and
 future external-validation integration
 **Out of scope:** archive extraction, data transformation, model training,
@@ -324,7 +325,12 @@ gaps, sensor orientation, scale/orientation drift, and external-model performanc
 also non-blocking diagnostics for intake. None are silently accepted for compatibility,
 pooling, or production claims.
 
-## 7. Label and censoring policy
+## 7. Superseded historical label and censoring draft
+
+This section is retained to preserve the earlier design record. It is not current evidence:
+Phase G and Phase H did not inspect outcomes, terminal events, exact RUL, or censoring.
+No implementation may use the draft statements below until a separately authorized outcome
+adjudication produces independent source evidence.
 
 Label policy version: `ims_rul_label_v1`.
 
@@ -413,8 +419,8 @@ Set 2 **intake** is complete only when all of the following are true:
 4. configured physical trajectories and bearing observations have unique natural keys;
 5. no sensor/channel is represented as an independent trajectory, and sensor-view
    weights sum to one per bearing timestamp;
-6. bearing 1 has metadata-supported outer-race failure labels ending at RUL 0;
-7. bearings 2-4 are right-censored with null RUL;
+6. a separately authorized outcome adjudication has established any terminal-event facts;
+7. no endpoint, RUL, or censoring assertion is used before that adjudication;
 8. common sensor-view features contain no cross-sensor or dataset-identity shortcuts and use only
    causal history;
 9. manifests include full input/config/code/tool/label/artifact provenance;
@@ -434,11 +440,10 @@ evaluation is the next, separate evidence phase.
 2. Run leakage-safe Set 1 LOBO with all feature selection and fitted preprocessing
    inside each fold.
 3. Fit one final Set-1-only common-contract model after its design is frozen.
-4. Apply that frozen model/preprocessor to Set 2 bearing 1 as an unseen dataset and
-   trajectory. Do not use Set 2 labels, statistics, thresholds, or drift results to
-   select the model retroactively.
-5. Treat bearings 2-4 as censored coverage/drift data, not ordinary RUL-regression
-   test labels.
+4. Do not apply a model, derive metrics, or assign bearing-specific outcome status until a
+   separate outcome and dataset-use decision is accepted.
+5. Do not call any Set 2 bearing censored, event-free, or a regression example without that
+   separate evidence.
 
 ### Required reporting
 
@@ -472,17 +477,14 @@ Pooling may be proposed only in a new ADR after:
 
 Even after pooling, three failed trajectories cannot justify broad industrial claims.
 
-## 12. Set 3 sequencing
+## 12. Observed candidate sequencing
 
-Defer Set 3 acquisition. Set 2 is sufficient to expose and fix the architectural
-problems that Set 3 would share: immutable intake, one-sensor mapping, canonical
-trajectory IDs, dataset-aware labels, feature compatibility, and external-domain
-evaluation. Downloading Set 3 now would multiply raw-data state before any acceptance
-path has passed.
+The locally registered package is observed as `observed_4th_test_candidate_v1`, not an
+official publisher Set 3 identity. Its physical-bearing map, publisher identity, and
+holdout eligibility are unresolved. Do not transfer the documented Set 2 map, use it for
+adaptation, or infer a dataset role.
 
-After Set 2 intake passes G01-G25 and its runbook reproduces a deterministic result,
-Set 3 should use the same interfaces with a new dataset configuration and source-
-specific failure metadata. No Set 3 download is authorized by this design.
+Any authoritative provenance acquisition or later outcome review needs separate approval.
 
 ## 13. Risks, rejected alternatives, and rollback
 
@@ -519,11 +521,9 @@ all checks pass. Build canonical recording, sensor, trajectory, and bearing-obse
 tables with grouping key `(dataset_id, run_id, physical_bearing_id)`. Set 2 channel
 1-4 maps to physical bearing 1-4; `axis` is null.
 
-Label bearing 1 as metadata-supported outer-race failure at the verified final
-timestamp. Mark bearings 2-4 right-censored with null RUL. Generate
-`common_sensor_view_v1` features without cross-sensor or dataset-identity fields,
-enforce timestamp weight sums and equal-trajectory aggregation, and prove
-causal-prefix/fold-local behavior in tests.
+Do not assign terminal conditions, censoring, RUL, features, or model inputs. The only
+accepted Phase H mapping fact is source channels 0-3 to Set 2 physical bearings 1-4, with
+orientation unknown; candidate mappings remain null.
 
 Stop after deterministic intake and feature artifacts pass G01-G25. Do not train,
 tune, pool datasets, update serving artifacts, download Set 3, or revise business

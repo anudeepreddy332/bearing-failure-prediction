@@ -13,6 +13,11 @@ is now recorded as `observed_4th_test_candidate_v1` from its observed `4th_test/
 root; publisher identity and holdout eligibility remain unverified/deferred. No outcomes,
 roles, features, evaluation, pooling, model, or serving work is authorized.
 
+Phase H preserves all four candidate physical-bearing mappings as null. The documented
+Set 2 channel arrangement is not transferred to this candidate, because the observed
+6,324-recording package conflicts with the local document's 4,448-recording Set 3
+description. This does not identify an official publisher dataset.
+
 ## Evidence Boundary
 
 The selected outer member was named `IMS/3rd_test.rar`. Its metadata-only inner index has
