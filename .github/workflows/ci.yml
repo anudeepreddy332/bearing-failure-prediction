@@ -54,6 +54,12 @@ jobs:
           --repo-root . --config configs/datasets/ims_sets23_mapping_evidence_v1.json
           --artifacts data/manifests/ims_sets23_mapping_evidence/v1
 
+      - name: Validate Phase I dataset-role freeze evidence
+        run: >
+          python scripts/validate_sets23_role_freeze.py
+          --repo-root . --config configs/datasets/ims_sets23_role_freeze_v1.json
+          --artifacts data/manifests/ims_sets23_role_freeze/v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)

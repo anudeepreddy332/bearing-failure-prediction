@@ -10,8 +10,9 @@ CRC, deletion proof, package hash, and metadata-only inner index are preserved i
 
 Phase G later authorized a bounded outcome-blind structural inspection. The source package
 is now recorded as `observed_4th_test_candidate_v1` from its observed `4th_test/txt` inner
-root; publisher identity and holdout eligibility remain unverified/deferred. No outcomes,
-roles, features, evaluation, pooling, model, or serving work is authorized.
+root; publisher identity and holdout eligibility remain unverified/deferred. Phase I freezes
+it as a protected, unqualified evaluation candidate. No outcomes, features, evaluation,
+pooling, model, or serving work is authorized.
 
 Phase H preserves all four candidate physical-bearing mappings as null. The documented
 Set 2 channel arrangement is not transferred to this candidate, because the observed
@@ -32,8 +33,8 @@ verified.
 
 ## Future Role
 
-Set 3 is a conditional future external-holdout candidate. That role is not frozen and
-does not authorize implementation. Any identity, outcome, feature, evaluation, or pooling
-work requires a separate decision and explicit evidence gates. Phase E's Set 1 endpoint
+The observed candidate is not a qualified holdout and cannot be used for development,
+adaptation, evaluation, or outcome work. Future external evaluation requires new evidence,
+explicit authorization, and a superseding decision. Phase E's Set 1 endpoint
 proxy result remains `not_identifiable_shared_run_clock_target`; this source registration
 does not authorize Set 2 or Set 3 use.

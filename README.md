@@ -211,8 +211,9 @@ Set 2 has 984 structurally valid recordings with an explicit four-channel-to-bea
 orientation remains unknown. The source package named `3rd_test.rar` contains an observed
 `4th_test/txt` root with 6,324 structurally valid recordings and is recorded only as
 `observed_4th_test_candidate_v1`. Its publisher identity and holdout eligibility are
-unverified/deferred. Neither dataset role is frozen, and this work authorizes no outcomes,
-features, evaluation, pooling, model work, or serving.
+unverified/deferred. Phase I freezes Set 2 as development evidence with prior terminal
+metadata awareness and freezes the observed candidate as protected but unqualified. Neither
+role authorizes outcomes, features, evaluation, pooling, model work, or serving.
 
 Phase H records the document-supported Set 2 mapping from zero-based channels `0`-`3` to
 physical bearings `1`-`4`, with orientation unknown. It deliberately records all candidate

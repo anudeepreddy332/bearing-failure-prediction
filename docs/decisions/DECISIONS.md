@@ -867,6 +867,26 @@ separately authorized dataset-status, provenance, or outcome review.
 
 ---
 
+### D-040 — Freeze Set 2/observed-candidate roles with prior metadata awareness
+**Decision:** Phase I freezes `ims_set2` as `development_evidence` with status
+`frozen_with_prior_terminal_metadata_awareness`. It freezes
+`observed_4th_test_candidate_v1` as `protected_evaluation_candidate` with status
+`unqualified_identity_mapping_unresolved_with_related_metadata_awareness`. The overall status
+is `ROLES_FROZEN_WITH_PRIOR_METADATA_AWARENESS`.
+**Why:** Before role assignment, reviewers knew publisher metadata stating Set 2 ended with
+documented outer-race damage in bearing 1 and documented Set 3 ended with outer-race damage
+in bearing 3. The candidate's relationship to documented Set 3 remains unresolved. No
+signal-distribution, degradation-pattern, event-time, label, feature, model, or
+measured-performance evidence was used for role selection. Neither dataset may be described
+as absolutely blinded or untouched.
+**Scope boundary:** This does not authorize outcomes, labels, event-time adjudication,
+features, drift analysis, modeling, pooling, adaptation, evaluation, or serving. Set 2 needs
+separate authorization before outcome/development work. The candidate may only undergo a
+separately authorized provenance/mapping resolution; any future role change requires new
+evidence, explicit authorization, and a superseding decision.
+
+---
+
 ## Log format for future entries
 
 ```
