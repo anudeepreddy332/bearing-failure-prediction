@@ -67,8 +67,9 @@ legacy database evaluation scripts, are the current evaluation authority.
 
 Phase F registers local Set 2 and Set 3 archive packages. Phase G consumed them only for
 outcome-blind structural evidence: timestamps, exact numeric shape and finiteness, content
-hashes, channels, and deterministic identities. The tracked raw-free evidence is in
-`data/manifests/ims_sets23_source_packages/v1/`; the ignored local archives remain under
+hashes, channels, and deterministic identities. The Phase F registration evidence is in
+`data/manifests/ims_sets23_source_packages/v1/`; receipt-backed Phase G structural evidence
+is in `data/manifests/ims_sets23_structural_identity/v3/`. The ignored local archives remain under
 `data/raw/set2/2nd_test.rar` and `data/raw/set3/3rd_test.rar` when separately provisioned.
 Set 2 has an observed structural run identity but no outcome or role decision. The source
 archive named `3rd_test.rar` is recorded as `observed_4th_test_candidate_v1` from its

@@ -78,7 +78,9 @@ anywhere** and cannot be filled without new code. Details below.
 > configs/datasets/ims_sets23_structural_identity_v1.json --artifacts
 > data/manifests/ims_sets23_structural_identity/v3`. It records 984 Set 2 recordings and
 > 6,324 recordings from an observed `4th_test/txt` candidate package. It authorizes no
-> outcomes, roles, features, evaluation, models, or serving.
+> outcomes, roles, features, evaluation, models, or serving. The v3 package includes 58
+> distinct strict-no-op replay receipts plus a receipt-hash and chunk-manifest coverage
+> ledger; the raw-free validator recomputes their fixed ranges and structural bindings.
 
 ---
 

@@ -196,12 +196,16 @@ Phase F recorded an unconsumed source-registration state at that time. Phase G s
 outcome-blind structural parse, without assigning outcomes, labels, roles, features, or
 models. `data/raw/set2/2nd_test.rar`
 and `data/raw/set3/3rd_test.rar` are local, untracked archives. Their tracked hashes,
-metadata-only archive indexes, provenance limits, and unconsumed state are under
+metadata-only archive indexes, provenance limits, and historical Phase F unconsumed state are under
 `data/manifests/ims_sets23_source_packages/v1/` and can be checked without raw data:
 
 ```bash
 python scripts/validate_sets23_source_registration.py --repo-root .
 ```
+
+The receipt-backed Phase G structural evidence is under
+`data/manifests/ims_sets23_structural_identity/v3/` and is independently checked without
+raw archives by `scripts/validate_sets23_structural_identity.py`.
 
 Set 2 has 984 structurally valid recordings with an explicit four-channel-to-bearing map;
 orientation remains unknown. The source package named `3rd_test.rar` contains an observed
