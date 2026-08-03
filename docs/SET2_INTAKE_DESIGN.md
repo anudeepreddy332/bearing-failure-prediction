@@ -2,9 +2,11 @@
 
 **Status:** Historical intake architecture. Phase I freezes `ims_set2` as
 `development_evidence` with prior terminal metadata awareness; it remains unusable until a
-separately authorized use. Phase J adjudicates terminal metadata only and concludes no
-supervised target can be created from available metadata. It is not an untouched or blind
-external holdout. Historical sections below that describe an exact failure/RUL-zero endpoint,
+separately authorized use. Phase J adjudicates terminal metadata only: bearing 1 has documented
+terminal damage with timing unknown, while bearings 2-4 have no reported bearing-specific
+terminal outcome and no established terminal event. It concludes no supervised target can be
+created from available metadata. It is not an untouched or blind external holdout. Historical
+sections below that describe an exact failure/RUL-zero endpoint,
 censoring, or an external-validation role are superseded as current assumptions and retained
 only as historical design context.
 **Scope:** IMS Set 2 immutable intake, canonical representation, validation, and

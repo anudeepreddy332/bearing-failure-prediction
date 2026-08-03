@@ -19,7 +19,7 @@ OUTPUT_MEMBERS = ("bearing_outcomes.jsonl", "outcome_summary.json", "evidence_ma
 SCHEMA_VERSION = "ims_set2_outcome_evidence_v1"
 SCOPE_ID = "ims_set2_phase_j_outcome_evidence_v1"
 SET2 = "ims_set2"
-OVERALL_STATUS = "SET2_OUTCOME_METADATA_ADJUDICATED_EVENT_TIME_UNOBSERVED"
+OVERALL_STATUS = "SET2_OUTCOME_METADATA_ADJUDICATED_EVENT_TIME_NOT_ESTABLISHED"
 FEASIBILITY = "NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA"
 PDF_EVIDENCE = {
     "relative_path": "data/Readme Document for IMS Bearing Data.pdf",
@@ -152,7 +152,7 @@ def _bearing_rows() -> list[dict[str, Any]]:
             "physical_bearing_id": "bearing_1",
             "canonical_status": "terminal_damage_documented_event_time_unknown",
             "supported_terminal_fact": "publisher metadata documents outer-race damage by experiment end",
-            "event_time_status": "unobserved",
+            "event_time_status": "unknown_for_documented_terminal_damage",
             "unsupported_inferences": ["exact_failure_timestamp", "damage_onset", "run_end_equals_failure", "final_recording_rul_zero", "event_interval"],
         },
         *[
@@ -161,7 +161,7 @@ def _bearing_rows() -> list[dict[str, Any]]:
                 "physical_bearing_id": bearing,
                 "canonical_status": "terminal_outcome_not_reported_censoring_not_established",
                 "supported_terminal_fact": "no bearing-specific terminal outcome is reported in the available metadata",
-                "event_time_status": "unobserved",
+                "event_time_status": "not_adjudicable_terminal_event_not_established",
                 "unsupported_inferences": unknown,
             }
             for bearing in BEARING_IDS[1:]

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -44,6 +45,45 @@ def test_pinned_raw_free_build_validator_and_noop(published: Path) -> None:
     assert {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in published.iterdir()} == before
 
 
+def test_bearing_event_time_contract_is_not_generic_unobserved() -> None:
+    rows = phase_j._bearing_rows()
+    assert rows[0]["event_time_status"] == "unknown_for_documented_terminal_damage"
+    assert [row["event_time_status"] for row in rows[1:]] == [
+        "not_adjudicable_terminal_event_not_established",
+    ] * 3
+
+
+def test_validator_hardcodes_corrected_overall_status() -> None:
+    from scripts import validate_set2_outcome_evidence as validator
+
+    assert validator.EXPECTED_OVERALL_STATUS == phase_j.OVERALL_STATUS
+
+
+def test_optional_pdf_absent_succeeds_raw_free(tmp_path: Path) -> None:
+    phase_j._verify_optional_pdf(tmp_path, phase_j._validate_config(CONFIG))
+
+
+def test_optional_pdf_wrong_bytes_fail_closed(tmp_path: Path) -> None:
+    config = phase_j._validate_config(CONFIG)
+    path = tmp_path / config["local_metadata_evidence"]["relative_path"]
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"wrong metadata evidence")
+    with pytest.raises(phase_j.OutcomeEvidenceError, match="local metadata evidence pin mismatch"):
+        phase_j._verify_optional_pdf(tmp_path, config)
+
+
+def test_optional_pdf_matching_configured_hash_is_accepted(tmp_path: Path) -> None:
+    config = deepcopy(phase_j._validate_config(CONFIG))
+    payload = b"synthetic metadata evidence"
+    config["local_metadata_evidence"] = {
+        **config["local_metadata_evidence"],
+        "relative_path": "metadata.pdf",
+        "sha256": sha256_bytes(payload),
+    }
+    (tmp_path / "metadata.pdf").write_bytes(payload)
+    phase_j._verify_optional_pdf(tmp_path, config)
+
+
 @pytest.mark.parametrize(
     ("section", "field", "value"),
     [
@@ -72,6 +112,9 @@ def test_config_cannot_weaken_hardcoded_contract(tmp_path: Path, section: str, f
     [
         (0, "supported_terminal_fact", "run end is exact failure time"),
         (0, "event_time_status", "observed"),
+        (1, "event_time_status", "unobserved"),
+        (2, "event_time_status", "unobserved"),
+        (3, "event_time_status", "unobserved"),
         (0, "unsupported_inferences", ["final_recording_rul_zero"]),
         (1, "canonical_status", "right_censored"),
         (2, "supported_terminal_fact", "healthy negative class event-free"),
