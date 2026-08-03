@@ -24,9 +24,10 @@ It records the local IMS readme path and SHA-256
 The PDF is ignored and optional in a cold clone: if present during publication its hash is
 verified; raw-free validation and CI do not require it.
 
-The NASA catalog URL `https://data.nasa.gov/dataset/IMS-Bearing-Data-Set/5udd-7zpt` is
-publisher-level attribution only. It is not evidence that NASA supplied a channel mapping
-or a checksum for these local bytes.
+The official NASA page `https://data.nasa.gov/dataset/ims-bearings` is publisher-level
+attribution only. It states the data came from the Center for Intelligent Maintenance
+Systems, University of Cincinnati; it is not evidence that NASA supplied a channel mapping,
+a local PDF checksum, or authentication for these local package bytes.
 
 The observed candidate remains unresolved because its source archive is named
 `3rd_test.rar`, its observed inner root is `4th_test/txt`, and Phase G observed 6,324
@@ -46,3 +47,10 @@ non-regular members.
 Tracked artifacts are under `data/manifests/ims_sets23_mapping_evidence/v1/`. Their exact
 hashes and byte sizes are recorded in `evidence_manifest.json` and checked by the validator.
 The package contains no archive bytes, signal values, outcomes, or downstream artifacts.
+
+Current artifact hashes are:
+
+- `mapping_overlay.jsonl`: `b6b7322ee56ffeda0fd9b2b9a3036a090fbb35b8ff53678bf5aed1d2b36f4396`
+- `mapping_summary.json`: `72f50e9da77d5ddcdd81a0d760e25f45a93fcddf160c99362fa9b85dc659c2a4`
+- `source_evidence_registry.jsonl`: `f8506d0b7f3f08cf539f04eb12ab0d6ba208a667628d09b8c731035a6efce3e6`
+- `evidence_manifest.json`: `e715b7037544c7ed3abee8e75a282189f6cd54e2b5e723ca3eba957411bc0130`

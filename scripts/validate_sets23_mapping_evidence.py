@@ -118,6 +118,22 @@ def validate(repo_root: Path, config_path: Path, artifacts: Path) -> dict[str, A
         raise ValidationError("mapping row schema mismatch")
     _expect_equal(overlay, _overlay_rows(config), "mapping overlay")
     _expect_equal(registry, _evidence_rows(config), "source evidence registry")
+    registry_by_id = {row["evidence_id"]: row for row in registry}
+    publisher = registry_by_id.get("publisher_attribution")
+    candidate_decision = registry_by_id.get("candidate_conservative_nonassignment")
+    if publisher != {
+        "evidence_id": "publisher_attribution",
+        "evidence_class": "publisher_level_attribution",
+        "source_locator": "https://data.nasa.gov/dataset/ims-bearings",
+        "source_sha256": None,
+        "claim": "publisher-level IMS dataset attribution",
+        "applicability": "both_packages",
+        "status": "attribution_only",
+        "limitations": "does not supply this local PDF checksum or channel mapping",
+    }:
+        raise ValidationError("publisher attribution evidence mismatch")
+    if candidate_decision is None or candidate_decision["evidence_class"] != "conservative_adjudication_decision":
+        raise ValidationError("candidate nonassignment evidence class mismatch")
     expected_summary = {
         "schema_version": config["schema_version"],
         "scope_id": config["scope_id"],
