@@ -102,6 +102,14 @@ anywhere** and cannot be filled without new code. Details below.
 > prior terminal metadata awareness and the observed candidate as protected but unqualified;
 > it authorizes no data use.
 
+> Phase J's Set 2 terminal-metadata evidence is under
+> `data/manifests/ims_set2_outcome_evidence/v1`. Rebuild or strict-no-op validate it with
+> `python -m src.data.set2_outcome_evidence --repo-root .`, then validate it raw-free with
+> `python scripts/validate_set2_outcome_evidence.py --repo-root . --config
+> configs/datasets/ims_set2_outcome_evidence_v1.json --artifacts
+> data/manifests/ims_set2_outcome_evidence/v1`. It records event time as unobserved and returns
+> `NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA`; it creates no target.
+
 ---
 
 ## Answers to the 8 discovery questions

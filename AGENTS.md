@@ -78,6 +78,11 @@ recorded as `observed_4th_test_candidate_v1` from its `4th_test/txt` inner root.
 protected, unqualified evaluation candidate with unresolved publisher identity and
 physical-bearing mapping, and has no current development, evaluation, adaptation, or outcome
 use.
+
+Phase J adjudicates only terminal-outcome metadata: bearing 1 has documented terminal damage
+with unobserved event time, while bearings 2-4 have no reported bearing-specific terminal
+outcome and no established censoring. It creates no targets. A run-end countdown is a shared
+experiment-clock proxy, not bearing RUL.
 Do not implement downstream work without separate human authorization and gates.
 
 Phase H records only the documented Set 2 source-channel map: zero-based channels `0`-`3`
