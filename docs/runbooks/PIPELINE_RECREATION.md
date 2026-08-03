@@ -94,6 +94,14 @@ anywhere** and cannot be filled without new code. Details below.
 > The optional local PDF check is publication-time provenance only; CI does not require the
 > ignored PDF. This authorizes no outcomes, features, evaluation, models, pooling, or serving.
 
+> Phase I's frozen role evidence is under `data/manifests/ims_sets23_role_freeze/v1`.
+> Rebuild or strict-no-op validate it with `python -m src.data.sets23_role_freeze --repo-root .`,
+> then validate it raw-free with `python scripts/validate_sets23_role_freeze.py --repo-root .
+> --config configs/datasets/ims_sets23_role_freeze_v1.json --artifacts
+> data/manifests/ims_sets23_role_freeze/v1`. It freezes Set 2 as development evidence with
+> prior terminal metadata awareness and the observed candidate as protected but unqualified;
+> it authorizes no data use.
+
 ---
 
 ## Answers to the 8 discovery questions

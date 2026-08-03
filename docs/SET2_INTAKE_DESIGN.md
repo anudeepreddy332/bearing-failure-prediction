@@ -1,7 +1,10 @@
 # Set 2 Intake Architecture and Terra Handoff Plan
 
-**Status:** Historical intake architecture. Phase H records only the documented Set 2
-channel map; no outcome adjudication or dataset-use decision has been made.
+**Status:** Historical intake architecture. Phase I freezes `ims_set2` as
+`development_evidence` with prior terminal metadata awareness; it remains unusable until a
+separately authorized outcome/event-time review. It is not an untouched or blind external
+holdout. Historical sections below that describe Set 2 as an external-validation domain are
+superseded as a current role assumption and retained only as historical design context.
 **Scope:** IMS Set 2 immutable intake, canonical representation, validation, and
 future external-validation integration
 **Out of scope:** archive extraction, data transformation, model training,
@@ -482,7 +485,7 @@ Even after pooling, three failed trajectories cannot justify broad industrial cl
 The locally registered package is observed as `observed_4th_test_candidate_v1`, not an
 official publisher Set 3 identity. Its physical-bearing map, publisher identity, and
 holdout eligibility are unresolved. Do not transfer the documented Set 2 map, use it for
-adaptation, or infer a dataset role.
+adaptation, or treat its protected, unqualified role as a qualified holdout.
 
 Any authoritative provenance acquisition or later outcome review needs separate approval.
 

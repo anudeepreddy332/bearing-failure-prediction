@@ -71,17 +71,21 @@ hashes, channels, and deterministic identities. The Phase F registration evidenc
 `data/manifests/ims_sets23_source_packages/v1/`; receipt-backed Phase G structural evidence
 is in `data/manifests/ims_sets23_structural_identity/v3/`. The ignored local archives remain under
 `data/raw/set2/2nd_test.rar` and `data/raw/set3/3rd_test.rar` when separately provisioned.
-Set 2 has an observed structural run identity but no outcome or role decision. The source
-archive named `3rd_test.rar` is recorded as `observed_4th_test_candidate_v1` from its
-`4th_test/txt` inner root; publisher identity and holdout eligibility remain deferred.
+Phase H alone established only the documented Set 2 mapping. Phase I now freezes `ims_set2`
+as `development_evidence` with prior terminal metadata awareness, but authorizes no data use;
+it is never an untouched or blind external holdout. The source archive named `3rd_test.rar` is
+recorded as `observed_4th_test_candidate_v1` from its `4th_test/txt` inner root. It is a
+protected, unqualified evaluation candidate with unresolved publisher identity and
+physical-bearing mapping, and has no current development, evaluation, adaptation, or outcome
+use.
 Do not implement downstream work without separate human authorization and gates.
 
 Phase H records only the documented Set 2 source-channel map: zero-based channels `0`-`3`
 map to physical bearings `1`-`4`; orientation remains unknown. Every physical-bearing
 assignment for `observed_4th_test_candidate_v1` is null because its observed 6,324-recording
 package conflicts with the local document's 4,448-recording Set 3 description. This mapping
-evidence does not freeze dataset use or authorize any outcome, feature, evaluation, model,
-pooling, adaptation, or serving work.
+evidence alone did not freeze dataset use. Phase I freezes roles without authorizing any
+outcome, feature, evaluation, model, pooling, adaptation, or serving work.
 
 `common_sensor_view_v1` is the approved future cross-dataset contract:
 
