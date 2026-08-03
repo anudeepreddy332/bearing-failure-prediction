@@ -226,6 +226,11 @@ python scripts/validate_sets23_mapping_evidence.py --repo-root . \
   --artifacts data/manifests/ims_sets23_mapping_evidence/v1
 ```
 
+Phase J records Set 2 terminal metadata only: bearing 1 has documented terminal damage with
+event time unobserved, and bearings 2-4 have no reported bearing-specific terminal outcome or
+established censoring. It concludes `NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA`; no RUL,
+classification, survival, or early-warning target was created.
+
 ---
 
 ## License

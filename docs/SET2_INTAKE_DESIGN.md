@@ -2,9 +2,11 @@
 
 **Status:** Historical intake architecture. Phase I freezes `ims_set2` as
 `development_evidence` with prior terminal metadata awareness; it remains unusable until a
-separately authorized outcome/event-time review. It is not an untouched or blind external
-holdout. Historical sections below that describe Set 2 as an external-validation domain are
-superseded as a current role assumption and retained only as historical design context.
+separately authorized use. Phase J adjudicates terminal metadata only and concludes no
+supervised target can be created from available metadata. It is not an untouched or blind
+external holdout. Historical sections below that describe an exact failure/RUL-zero endpoint,
+censoring, or an external-validation role are superseded as current assumptions and retained
+only as historical design context.
 **Scope:** IMS Set 2 immutable intake, canonical representation, validation, and
 future external-validation integration
 **Out of scope:** archive extraction, data transformation, model training,
