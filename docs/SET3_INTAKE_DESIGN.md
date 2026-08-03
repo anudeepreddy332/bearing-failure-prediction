@@ -8,9 +8,10 @@ archive was deleted only after byte-verified recovery. Its hash, selected member
 CRC, deletion proof, package hash, and metadata-only inner index are preserved in
 `data/manifests/ims_sets23_source_packages/v1/`.
 
-This is source acquisition and registration only. Set 3 has not been extracted into
-recordings, parsed, assigned identities/outcomes, featured, evaluated, pooled, or used by
-any model or serving path.
+Phase G later authorized a bounded outcome-blind structural inspection. The source package
+is now recorded as `observed_4th_test_candidate_v1` from its observed `4th_test/txt` inner
+root; publisher identity and holdout eligibility remain unverified/deferred. No outcomes,
+roles, features, evaluation, pooling, model, or serving work is authorized.
 
 ## Evidence Boundary
 

@@ -826,6 +826,27 @@ Phase E remains `not_identifiable_shared_run_clock_target` and `set2_authorized=
 
 ---
 
+### D-038 — Record outcome-blind structural identities for the observed Set 2 and 4th-test packages
+**Decision:** Phase G authorizes one outcome-blind structural parse of the registered Set 2
+package and the package whose observed inner root is `4th_test/txt`. The latter is recorded
+as `observed_4th_test_candidate_v1`, derived from `3rd_test.rar`, with publisher identity
+unverified and holdout eligibility deferred. The accepted evidence contains only member,
+timestamp, shape, finite-value, content-hash, channel, and deterministic identity facts.
+**Why:** All 7,308 observed recordings passed the exact 20,480-by-4 numeric/finite gate,
+had unique timestamps and content bytes, and formed two non-overlapping time ranges. This
+is sufficient for a structural identity conclusion, but not for publisher identity, outcomes,
+or a dataset role.
+**Evidence boundary:** Set 2 channels map explicitly to four physical bearings, with physical
+orientation unknown. The observed 4th-test candidate has no supported physical-bearing map.
+The `3rd_test.rar` outer name, `4th_test/txt` inner root, and earlier 4,448-recording claim
+remain unresolved publisher-provenance facts. No outcomes, labels, endpoint times, censoring,
+roles, features, drift analysis, models, evaluation, pooling, or serving artifacts were made.
+**Scope boundary:** The only permitted next step is separately authorized provenance, role, or
+outcome review. This decision does not establish an official publisher Set 4 identity, an
+external holdout designation, exact RUL, failure timing, or a model GO state.
+
+---
+
 ## Log format for future entries
 
 ```
