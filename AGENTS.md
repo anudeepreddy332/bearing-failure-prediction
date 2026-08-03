@@ -80,9 +80,11 @@ physical-bearing mapping, and has no current development, evaluation, adaptation
 use.
 
 Phase J adjudicates only terminal-outcome metadata: bearing 1 has documented terminal damage
-with unobserved event time, while bearings 2-4 have no reported bearing-specific terminal
-outcome and no established censoring. It creates no targets. A run-end countdown is a shared
-experiment-clock proxy, not bearing RUL.
+with timing unknown, while bearings 2-4 have no reported bearing-specific terminal outcome and
+no established terminal event. It creates no targets. No candidate outcome, signal, label,
+target, feature, model, or measured-performance evidence is consumed; only the accepted Phase I
+role artifact containing its protected-role row is indirectly pinned and read for role preservation.
+A run-end countdown is a shared experiment-clock proxy, not bearing RUL.
 Do not implement downstream work without separate human authorization and gates.
 
 Phase H records only the documented Set 2 source-channel map: zero-based channels `0`-`3`
