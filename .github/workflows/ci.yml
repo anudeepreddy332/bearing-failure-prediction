@@ -45,7 +45,8 @@ jobs:
       - name: Validate Phase G structural identity evidence
         run: >
           python scripts/validate_sets23_structural_identity.py
-          --artifacts data/manifests/ims_sets23_structural_identity/v2
+          --repo-root . --config configs/datasets/ims_sets23_structural_identity_v1.json
+          --artifacts data/manifests/ims_sets23_structural_identity/v3
 
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
