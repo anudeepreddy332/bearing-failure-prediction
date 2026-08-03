@@ -42,6 +42,10 @@ def test_pinned_config_and_cold_clone_build_are_exact_and_noop(published: Path) 
 
     config = phase_h._validate_config(CONFIG)
     assert config["accepted_status"] == phase_h.STATUS
+    assert config["publisher_attribution"] == {
+        "url": "https://data.nasa.gov/dataset/ims-bearings",
+        "status": "publisher_level_attribution_only",
+    }
     assert validator.validate(ROOT, CONFIG, published) == {
         "accepted": True,
         "status": phase_h.STATUS,
@@ -51,6 +55,23 @@ def test_pinned_config_and_cold_clone_build_are_exact_and_noop(published: Path) 
     _, was_published = phase_h.build(ROOT, CONFIG, published)
     assert was_published is False
     assert {path.name: path.read_bytes() for path in published.iterdir()} == before
+
+
+def test_registry_pins_official_attribution_and_conservative_nonassignment() -> None:
+    registry = {row["evidence_id"]: row for row in phase_h._evidence_rows(phase_h._validate_config(CONFIG))}
+    assert registry["publisher_attribution"] == {
+        "evidence_id": "publisher_attribution",
+        "evidence_class": "publisher_level_attribution",
+        "source_locator": "https://data.nasa.gov/dataset/ims-bearings",
+        "source_sha256": None,
+        "claim": "publisher-level IMS dataset attribution",
+        "applicability": "both_packages",
+        "status": "attribution_only",
+        "limitations": "does not supply this local PDF checksum or channel mapping",
+    }
+    assert registry["candidate_conservative_nonassignment"]["evidence_class"] == (
+        "conservative_adjudication_decision"
+    )
 
 
 @pytest.mark.parametrize(

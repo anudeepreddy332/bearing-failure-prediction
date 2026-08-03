@@ -181,7 +181,7 @@ ruff check .
 
 NASA IMS Bearing Dataset:
 
-- Primary source: https://data.nasa.gov/dataset/IMS-Bearing-Data-Set/5udd-7zpt
+- Primary source: https://data.nasa.gov/dataset/ims-bearings
 - NASA Prognostics Data Repository: https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/
 - Original provider: NSF I/UCRC Center for Intelligent Maintenance Systems,
   University of Cincinnati

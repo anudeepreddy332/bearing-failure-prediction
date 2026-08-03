@@ -23,6 +23,8 @@ OUTPUT_MEMBERS = (
 STATUS = "PARTIAL_GO_SET2_MAPPING_SUPPORTED_CANDIDATE_UNRESOLVED"
 SET2 = "ims_set2"
 CANDIDATE = "observed_4th_test_candidate_v1"
+PUBLISHER_URL = "https://data.nasa.gov/dataset/ims-bearings"
+CANDIDATE_NONASSIGNMENT_CLASS = "conservative_adjudication_decision"
 PHASE_F_PINS = {
     "source_registration_summary_path": "data/manifests/ims_sets23_source_packages/v1/source_registration_summary.json",
     "source_registration_summary_sha256": "639bdecde01150f0aba5731f5239ec6d2c48e96e6b60f9b7e875e006b2895740",
@@ -152,7 +154,7 @@ def _validate_config(config_path: Path) -> dict[str, Any]:
     } or document["relative_path"] != "data/Readme Document for IMS Bearing Data.pdf" or document["sha256"] != "cf46d37c21f7f292c11bbbdd4695d876c417ed1d6425e3d87c962ae2182ae6ed" or document["mapping_page"] != 2 or document["set2_channel_mapping"] != {"0": "bearing_1", "1": "bearing_2", "2": "bearing_3", "3": "bearing_4"} or document["set3_documented_recording_count"] != 4448 or document["set3_documented_last_timestamp_local"] != "2004-04-04T19:01:57":
         raise MappingEvidenceError("invalid local mapping document contract")
     if not isinstance(attribution, dict) or attribution != {
-        "url": "https://data.nasa.gov/dataset/IMS-Bearing-Data-Set/5udd-7zpt",
+        "url": PUBLISHER_URL,
         "status": "publisher_level_attribution_only",
     }:
         raise MappingEvidenceError("invalid publisher attribution contract")
@@ -268,7 +270,7 @@ def _evidence_rows(config: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "evidence_id": "candidate_conservative_nonassignment",
-            "evidence_class": "inference",
+            "evidence_class": CANDIDATE_NONASSIGNMENT_CLASS,
             "source_locator": phase_g["evidence_manifest_path"],
             "source_sha256": phase_g["evidence_manifest_sha256"],
             "claim": "candidate physical-bearing mapping remains null",
