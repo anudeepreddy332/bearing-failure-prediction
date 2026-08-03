@@ -170,8 +170,8 @@ ruff check .
 
 1. Obtain an independently governed target with bearing-specific outcome timing before
    retuning or interpreting endpoint-proxy metrics as degradation evidence.
-2. Keep Set 2 external-before-pooling and do not access or implement it without its
-   separate documented gates and authorization.
+2. Keep Set 2 in its frozen development-evidence role. Do not perform outcome/event-time work
+   or development use without separate authorization; pooling requires a separate ADR.
 3. Do not revisit API/dashboard productionization until an independently valid target
    and cross-trajectory evidence exist.
 

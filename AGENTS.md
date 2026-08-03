@@ -96,7 +96,9 @@ outcome, feature, evaluation, model, pooling, adaptation, or serving work.
   weight to each physical trajectory;
 - features are scale-robust and sensor-local, while unknown Set 2 orientation remains
   an explicit empirical risk;
-- Set 2 is external-validation data before any separate pooling ADR.
+- Phase I freezes Set 2 as development evidence with prior terminal metadata awareness;
+  current use remains unauthorized, it is never an untouched or blind external holdout, and
+  pooling still requires a separately authorized ADR.
 
 The permitted pre-consumption checks and the point at which Set 2 becomes consumed are
 defined in `docs/SET2_INTAKE_DESIGN.md` and D-027. Documentation approval is not
