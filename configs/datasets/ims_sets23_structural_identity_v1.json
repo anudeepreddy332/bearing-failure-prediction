@@ -1,0 +1,15 @@
+{
+  "schema_version": "ims_sets23_structural_identity_v1",
+  "scope_id": "ims_sets23_phase_g_structural_identity_v1",
+  "source_registration_summary_path": "data/manifests/ims_sets23_source_packages/v1/source_registration_summary.json",
+  "source_registration_summary_sha256": "639bdecde01150f0aba5731f5239ec6d2c48e96e6b60f9b7e875e006b2895740",
+  "archive_members_path": "data/manifests/ims_sets23_source_packages/v1/archive_members.jsonl",
+  "archive_members_sha256": "a9ac5751e4603f06e97eb48dff35ead71e675b0523a1a015d83dac0dc492a9f3",
+  "expected_shape": {"rows": 20480, "columns": 4},
+  "chunk_plan": {"chunk_size": 128, "ordering": "phase_f_member_path_lexicographic_v1"},
+  "packages": [
+    {"dataset_id": "ims_set2", "source_package_id": "ims_set2", "run_id": "run_01", "archive_relative_path": "data/raw/set2/2nd_test.rar", "archive_sha256": "b154d5ba1ae5f7f01cdd4f1bde5b08cfdc2f3134d51ad2f6614b1270a86ab632", "archive_byte_size": 85581092, "expected_regular_member_count": 984, "physical_bearing_mapping": {"0": "bearing_1", "1": "bearing_2", "2": "bearing_3", "3": "bearing_4"}, "dataset_identity_status": "candidate_structurally_identified"},
+    {"dataset_id": "observed_4th_test_candidate_v1", "source_package_id": "ims_set3", "run_id": "run_candidate_01", "archive_relative_path": "data/raw/set3/3rd_test.rar", "archive_sha256": "01e9ec83c6c55adc0300a20003a261f9a2ac2b714aae4984050325e589252bc8", "archive_byte_size": 609047134, "expected_regular_member_count": 6324, "physical_bearing_mapping": null, "dataset_identity_status": "observed_inner_root_unverified", "dataset_identity_basis": "observed_inner_root", "publisher_dataset_id": null, "publisher_identity_status": "unverified", "holdout_eligibility_status": "deferred_not_assessed"}
+  ],
+  "output_members": ["recordings.jsonl", "sensor_observations.jsonl", "structural_summary.json", "evidence_manifest.json"]
+}

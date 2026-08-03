@@ -6,6 +6,13 @@ future external-validation integration
 **Out of scope:** archive extraction, data transformation, model training,
 artifact replacement, API/dashboard work, Set 3 acquisition, and Git integration
 
+> **Superseded outcome assumptions:** Phase G established only outcome-blind structural
+> facts for the registered Set 2 package. It did not inspect or adjudicate terminal damage,
+> failure time, exact RUL, or censoring. Statements below that describe an experiment endpoint
+> as an exact failure timestamp/RUL zero or bearings 2-4 as established right-censored records
+> are historical design assumptions, not current evidence. A separately authorized outcome
+> decision is required before any such label claim.
+
 ## 1. Executive architecture decision
 
 IMS Set 2 will enter through a staged progression:

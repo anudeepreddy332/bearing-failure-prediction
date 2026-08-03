@@ -42,6 +42,11 @@ jobs:
           --config configs/datasets/ims_sets23_source_packages_v1.json
           --artifacts data/manifests/ims_sets23_source_packages/v1
 
+      - name: Validate Phase G structural identity evidence
+        run: >
+          python scripts/validate_sets23_structural_identity.py
+          --artifacts data/manifests/ims_sets23_structural_identity/v2
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)
