@@ -895,15 +895,16 @@ equivalence, final-recording RUL zero, or an event interval. Bearings `2`-`4` ar
 `terminal_outcome_not_reported_censoring_not_established`: no bearing-specific terminal
 outcome is reported, and no healthy, event-free, negative, right-censored, failure-free, or
 event-time claim is established. The accepted result is
-`SET2_OUTCOME_METADATA_ADJUDICATED_EVENT_TIME_UNOBSERVED` and
+`SET2_OUTCOME_METADATA_ADJUDICATED_EVENT_TIME_NOT_ESTABLISHED` and
 `NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA`.
 **Why:** The available metadata supports a terminal-damage fact for bearing 1 only. It does
 not bind that fact to a recording timestamp or supply the event-free and damaged bounds needed
 for interval timing. A run-end countdown would be a shared experiment-clock endpoint proxy,
 not bearing RUL.
 **Scope boundary:** This does not create regression, survival, early-warning, failure-class,
-or RUL targets. It does not inspect signals or candidate evidence, change Phase I roles, or
-authorize features, modeling, evaluation, pooling, adaptation, or serving. Timing can advance
+or RUL targets. It does not inspect signals or candidate outcome evidence; it only pins and
+reads the accepted Phase I role artifact for role preservation. It does not change Phase I roles
+or authorize features, modeling, evaluation, pooling, adaptation, or serving. Timing can advance
 only with a bearing-linked inspection/event record; interval timing additionally needs
 independently supported event-free and damaged bounds.
 

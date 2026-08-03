@@ -19,6 +19,13 @@ ROW_KEYS = {"dataset_id", "physical_bearing_id", "canonical_status", "supported_
 SUMMARY_KEYS = {"schema_version", "scope_id", "dataset_id", "bearing_count", "overall_status", "feasibility", "run_end_countdown_status", "prohibited_artifacts", "event_time_upgrade_requirements"}
 MANIFEST_KEYS = {"schema_version", "scope_id", "config_sha256", "source_path", "source_sha256", "phase_f_inputs", "phase_g_inputs", "phase_h_inputs", "phase_i_inputs", "local_metadata_evidence", "overall_status", "feasibility", "artifact_sha256"}
 FORBIDDEN = frozenset({"label", "target", "rul", "feature", "distribution", "drift", "model", "evaluation", "pool", "pooling", "adapt", "adaptation", "serving", "candidate"})
+EXPECTED_OVERALL_STATUS = "SET2_OUTCOME_METADATA_ADJUDICATED_EVENT_TIME_NOT_ESTABLISHED"
+EXPECTED_EVENT_TIME_STATUSES = {
+    "bearing_1": "unknown_for_documented_terminal_damage",
+    "bearing_2": "not_adjudicable_terminal_event_not_established",
+    "bearing_3": "not_adjudicable_terminal_event_not_established",
+    "bearing_4": "not_adjudicable_terminal_event_not_established",
+}
 
 
 def _hash(path: Path) -> str:
@@ -56,8 +63,12 @@ def validate(repo_root: Path, config_path: Path, artifacts: Path) -> dict[str, A
     manifest = phase_j._json(members["evidence_manifest.json"])
     if any(set(row) != ROW_KEYS for row in rows) or rows != phase_j._bearing_rows():
         raise ValidationError("bearing outcome rows mismatch")
+    if {row["physical_bearing_id"]: row["event_time_status"] for row in rows} != EXPECTED_EVENT_TIME_STATUSES:
+        raise ValidationError("event-time-status contract mismatch")
     if set(summary) != SUMMARY_KEYS or summary != phase_j._summary(config):
         raise ValidationError("outcome summary mismatch")
+    if summary["overall_status"] != EXPECTED_OVERALL_STATUS:
+        raise ValidationError("overall-status contract mismatch")
     expected_manifest = {
         "schema_version": phase_j.SCHEMA_VERSION, "scope_id": phase_j.SCOPE_ID,
         "config_sha256": _hash(config_path), "source_path": "src/data/set2_outcome_evidence.py",
