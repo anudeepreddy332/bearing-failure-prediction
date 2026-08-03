@@ -21,7 +21,34 @@ from src.data.sets23_source_registration import canonical_json_bytes, sha256_byt
 
 CHUNK_MEMBERS = ("recordings.jsonl", "sensor_observations.jsonl", "structural_summary.json", "evidence_manifest.json")
 REPLAY_LEDGER = "chunk_replay_ledger.jsonl"
-FINAL_MEMBERS = (*CHUNK_MEMBERS[:-1], REPLAY_LEDGER, CHUNK_MEMBERS[-1])
+REPLAY_RECEIPTS = "chunk_replay_receipts.jsonl"
+FINAL_MEMBERS = (*CHUNK_MEMBERS[:-1], REPLAY_RECEIPTS, REPLAY_LEDGER, CHUNK_MEMBERS[-1])
+REPLAY_RECEIPT_SCHEMA = "ims_sets23_chunk_replay_receipt_v1"
+REPLAY_RECEIPT_KEYS = frozenset(
+    {
+        "schema_version",
+        "dataset_id",
+        "start_index",
+        "end_index",
+        "recording_count",
+        "sensor_observation_count",
+        "first_member_path",
+        "last_member_path",
+        "member_coverage_sha256",
+        "package_sha256",
+        "config_sha256",
+        "phase_f_archive_members_sha256",
+        "phase_f_source_registration_summary_sha256",
+        "first_pass_chunk_manifest_sha256",
+        "first_pass_recordings_sha256",
+        "first_pass_sensor_observations_sha256",
+        "first_pass_structural_summary_sha256",
+        "replay_recordings_sha256",
+        "replay_sensor_observations_sha256",
+        "replay_structural_summary_sha256",
+        "replay_result",
+    }
+)
 
 
 class StructuralIdentityError(ValueError):
@@ -313,17 +340,140 @@ def publish(output: Path, artifacts: dict[str, bytes]) -> bool:
     return True
 
 
-def assemble_chunks(config_path: Path, chunks_root: Path, output: Path) -> tuple[dict[str, bytes], bool]:
+def _atomic_json(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = canonical_json_bytes(value)
+    try:
+        existing = path.lstat()
+    except FileNotFoundError:
+        existing = None
+    if existing is not None:
+        if not stat.S_ISREG(existing.st_mode) or path.read_bytes() != payload:
+            raise StructuralIdentityError("existing replay receipt differs")
+        return
+    staging = path.with_name(f".{path.name}.tmp")
+    try:
+        with staging.open("xb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(staging, path)
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if staging.exists():
+            staging.unlink()
+
+
+def replay_chunk(
+    repo_root: Path,
+    source_root: Path,
+    config_path: Path,
+    chunk_output: Path,
+    receipt_directory: Path,
+    dataset_id: str,
+    start_index: int,
+) -> dict[str, Any]:
+    """Reparse one existing chunk and emit a receipt only for a strict no-op."""
+    artifacts, published = build(repo_root, source_root, config_path, chunk_output, start_index=start_index, chunk_size=128, dataset_filter=dataset_id)
+    if published:
+        raise StructuralIdentityError("replay encountered a first-pass publication")
+    config = _load_json(config_path)
+    manifest = _load_json(chunk_output / "evidence_manifest.json")
+    rows = _read_jsonl(chunk_output / "recordings.jsonl")
+    sensors = _read_jsonl(chunk_output / "sensor_observations.jsonl")
+    ordered = sorted(rows, key=lambda row: row["recording_index"])
+    if not ordered or ordered[0]["dataset_id"] != dataset_id or ordered[0]["recording_index"] != start_index:
+        raise StructuralIdentityError("receipt chunk identity mismatch")
+    coverage = b"".join(canonical_json_bytes({"member_path": row["member_path"], "recording_index": row["recording_index"]}) for row in ordered)
+    package = next(item for item in config["packages"] if item["dataset_id"] == dataset_id)
+    hashes = manifest["artifact_sha256"]
+    receipt = {
+        "schema_version": REPLAY_RECEIPT_SCHEMA,
+        "dataset_id": dataset_id,
+        "start_index": start_index,
+        "end_index": ordered[-1]["recording_index"],
+        "recording_count": len(ordered),
+        "sensor_observation_count": len(sensors),
+        "first_member_path": ordered[0]["member_path"],
+        "last_member_path": ordered[-1]["member_path"],
+        "member_coverage_sha256": sha256_bytes(coverage),
+        "package_sha256": package["archive_sha256"],
+        "config_sha256": _sha256_file(config_path)[0],
+        "phase_f_archive_members_sha256": config["archive_members_sha256"],
+        "phase_f_source_registration_summary_sha256": config["source_registration_summary_sha256"],
+        "first_pass_chunk_manifest_sha256": _sha256_file(chunk_output / "evidence_manifest.json")[0],
+        "first_pass_recordings_sha256": hashes["recordings.jsonl"],
+        "first_pass_sensor_observations_sha256": hashes["sensor_observations.jsonl"],
+        "first_pass_structural_summary_sha256": hashes["structural_summary.json"],
+        "replay_recordings_sha256": sha256_bytes(artifacts["recordings.jsonl"]),
+        "replay_sensor_observations_sha256": sha256_bytes(artifacts["sensor_observations.jsonl"]),
+        "replay_structural_summary_sha256": sha256_bytes(artifacts["structural_summary.json"]),
+        "replay_result": "strict_noop",
+    }
+    if any(receipt[f"first_pass_{name}"] != receipt[f"replay_{name}"] for name in ("recordings_sha256", "sensor_observations_sha256", "structural_summary_sha256")):
+        raise StructuralIdentityError("replay artifacts differ from first pass")
+    _atomic_json(receipt_directory / f"{dataset_id}_{start_index:04d}.json", receipt)
+    return receipt
+
+
+def assemble_chunks(config_path: Path, chunks_root: Path, receipts_root: Path, output: Path) -> tuple[dict[str, bytes], bool]:
     """Fail-closed assembly of fixed, independently reparsed chunk publications."""
     config = _load_json(config_path)
     expected = {"ims_set2": 984, "observed_4th_test_candidate_v1": 6324}
-    recordings: list[dict[str, Any]] = []; sensors: list[dict[str, Any]] = []; ledger: list[dict[str, Any]] = []
+    config_sha256 = _sha256_file(config_path)[0]
+    packages = {package["dataset_id"]: package for package in config["packages"]}
+    expected_chunks = {
+        **{f"set2_{start}": ("ims_set2", start) for start in range(0, expected["ims_set2"], 128)},
+        **{
+            f"obs4_{start}": ("observed_4th_test_candidate_v1", start)
+            for start in range(0, expected["observed_4th_test_candidate_v1"], 128)
+        },
+    }
+    observed_chunks = {path.name for path in chunks_root.iterdir() if path.is_dir()}
+    if observed_chunks != set(expected_chunks) or any(not path.is_dir() for path in chunks_root.iterdir()):
+        raise StructuralIdentityError("chunk directory set differs from fixed plan")
+    expected_receipts = {
+        f"{dataset}_{start:04d}.json" for dataset, start in expected_chunks.values()
+    }
+    observed_receipts = {path.name for path in receipts_root.iterdir()}
+    if observed_receipts != expected_receipts or any(
+        path.is_symlink() or not path.is_file() for path in receipts_root.iterdir()
+    ):
+        raise StructuralIdentityError("replay receipt set differs from fixed plan")
+    recordings: list[dict[str, Any]] = []
+    sensors: list[dict[str, Any]] = []
+    ledger: list[dict[str, Any]] = []
     seen_ranges: dict[str, set[int]] = {key: set() for key in expected}
-    for chunk in sorted(path for path in chunks_root.iterdir() if path.is_dir()):
+    for chunk_name, (planned_dataset, planned_start) in sorted(
+        expected_chunks.items(), key=lambda item: (item[1][0], item[1][1])
+    ):
+        chunk = chunks_root / chunk_name
         if {entry.name for entry in chunk.iterdir()} != set(CHUNK_MEMBERS):
             raise StructuralIdentityError(f"incomplete chunk: {chunk.name}")
         manifest = _load_json(chunk / "evidence_manifest.json")
-        if manifest.get("config_sha256") != _sha256_file(config_path)[0] or manifest.get("chunk_size") != 128:
+        expected_manifest_keys = {
+            "config_sha256",
+            "source_registration_summary_sha256",
+            "archive_members_sha256",
+            "chunk_start_index",
+            "chunk_size",
+            "artifact_sha256",
+            "conclusion",
+        }
+        if (
+            set(manifest) != expected_manifest_keys
+            or manifest.get("config_sha256") != config_sha256
+            or manifest.get("source_registration_summary_sha256")
+            != config["source_registration_summary_sha256"]
+            or manifest.get("archive_members_sha256") != config["archive_members_sha256"]
+            or manifest.get("chunk_start_index") != planned_start
+            or manifest.get("chunk_size") != 128
+            or manifest.get("conclusion") != "CHUNK_NOT_TERMINAL"
+        ):
             raise StructuralIdentityError("chunk config or plan mismatch")
         expected_hashes = manifest.get("artifact_sha256")
         if not isinstance(expected_hashes, dict) or set(expected_hashes) != set(CHUNK_MEMBERS) - {"evidence_manifest.json"}:
@@ -336,7 +486,11 @@ def assemble_chunks(config_path: Path, chunks_root: Path, output: Path) -> tuple
         if not chunk_records or len(chunk_sensors) != 4 * len(chunk_records):
             raise StructuralIdentityError("invalid chunk cardinality")
         dataset = chunk_records[0].get("dataset_id")
-        if dataset not in expected or any(row.get("dataset_id") != dataset for row in chunk_records):
+        if (
+            dataset != planned_dataset
+            or any(row.get("dataset_id") != dataset for row in chunk_records)
+            or any(row.get("dataset_id") != dataset for row in chunk_sensors)
+        ):
             raise StructuralIdentityError("mixed or unknown chunk dataset")
         indices = {row.get("recording_index") for row in chunk_records}
         if len(indices) != len(chunk_records) or any(type(index) is not int for index in indices) or seen_ranges[dataset].intersection(indices):
@@ -346,25 +500,42 @@ def assemble_chunks(config_path: Path, chunks_root: Path, output: Path) -> tuple
         if [row["recording_index"] for row in ordered] != list(range(start, end + 1)):
             raise StructuralIdentityError("non-contiguous chunk range")
         coverage_bytes = b"".join(canonical_json_bytes({"member_path": row["member_path"], "recording_index": row["recording_index"]}) for row in ordered)
-        ledger.append({
-            "chunk_manifest_sha256": _sha256_file(chunk / "evidence_manifest.json")[0],
-            "config_sha256": manifest["config_sha256"],
-            "dataset_id": dataset,
-            "first_member_path": ordered[0]["member_path"],
-            "last_member_path": ordered[-1]["member_path"],
-            "member_coverage_sha256": sha256_bytes(coverage_bytes),
-            "package_sha256": None,
-            "phase_f_archive_members_sha256": manifest["archive_members_sha256"],
-            "recording_count": len(ordered),
-            "replay_recordings_sha256": expected_hashes["recordings.jsonl"],
-            "replay_result": "strict_noop",
-            "replay_sensor_observations_sha256": expected_hashes["sensor_observations.jsonl"],
-            "sensor_observation_count": len(chunk_sensors),
-            "start_index": start,
-            "end_index": end,
-            "first_pass_recordings_sha256": expected_hashes["recordings.jsonl"],
-            "first_pass_sensor_observations_sha256": expected_hashes["sensor_observations.jsonl"],
-        })
+        receipt_path = receipts_root / f"{dataset}_{start:04d}.json"
+        receipt = _load_json(receipt_path)
+        receipt_bytes = canonical_json_bytes(receipt)
+        if receipt_path.read_bytes() != receipt_bytes:
+            raise StructuralIdentityError("replay receipt is not canonical JSON")
+        if (
+            set(receipt) != REPLAY_RECEIPT_KEYS
+            or receipt["schema_version"] != REPLAY_RECEIPT_SCHEMA
+            or receipt["dataset_id"] != dataset
+            or receipt["start_index"] != start
+            or receipt["end_index"] != end
+            or receipt["recording_count"] != len(ordered)
+            or receipt["sensor_observation_count"] != len(chunk_sensors)
+            or receipt["first_member_path"] != ordered[0]["member_path"]
+            or receipt["last_member_path"] != ordered[-1]["member_path"]
+            or receipt["member_coverage_sha256"] != sha256_bytes(coverage_bytes)
+            or receipt["package_sha256"] != packages[dataset]["archive_sha256"]
+            or receipt["config_sha256"] != manifest["config_sha256"]
+            or receipt["phase_f_archive_members_sha256"] != manifest["archive_members_sha256"]
+            or receipt["phase_f_source_registration_summary_sha256"]
+            != config["source_registration_summary_sha256"]
+            or receipt["first_pass_chunk_manifest_sha256"]
+            != sha256_bytes(canonical_json_bytes(manifest))
+            or receipt["replay_result"] != "strict_noop"
+        ):
+            raise StructuralIdentityError("invalid replay receipt")
+        for name in ("recordings", "sensor_observations", "structural_summary"):
+            if receipt[f"first_pass_{name}_sha256"] != expected_hashes[f"{name}.jsonl" if name != "structural_summary" else "structural_summary.json"] or receipt[f"replay_{name}_sha256"] != receipt[f"first_pass_{name}_sha256"]:
+                raise StructuralIdentityError("replay receipt artifact mismatch")
+        ledger.append(
+            {
+                "chunk_receipt_sha256": sha256_bytes(receipt_bytes),
+                "first_pass_chunk_manifest": manifest,
+                **receipt,
+            }
+        )
         seen_ranges[dataset].update(indices); recordings.extend(chunk_records); sensors.extend(chunk_sensors)
     if {key: values for key, values in seen_ranges.items()} != {key: set(range(count)) for key, count in expected.items()}:
         raise StructuralIdentityError("chunk coverage gap")
@@ -376,28 +547,41 @@ def assemble_chunks(config_path: Path, chunks_root: Path, output: Path) -> tuple
     sensor_bytes = b"".join(canonical_json_bytes(row) for row in sensors)
     summary = {"schema_version": config["schema_version"], "scope_id": config["scope_id"], "conclusion": "GO_STRUCTURAL_IDENTITY_OBSERVED_PROVENANCE_DEFERRED", "packages": [{"dataset_id": "ims_set2", "recording_count": 984, "sensor_observation_count": 3936, "physical_bearing_mapping_status": "explicit_channel_to_bearing", "orientation_status": "unknown", "outcomes": "not_inspected", "roles": "not_frozen"}, {"dataset_id": "observed_4th_test_candidate_v1", "recording_count": 6324, "sensor_observation_count": 25296, "physical_bearing_mapping_status": "unresolved", "dataset_identity_basis": "observed_inner_root", "publisher_dataset_id": None, "publisher_identity_status": "unverified", "holdout_eligibility_status": "deferred_not_assessed", "outcomes": "not_inspected", "roles": "not_frozen"}], "all_recordings_shape_finite_passed": 7308, "duplicate_recording_content_count": 0, "outcomes_or_labels_created": False, "roles_frozen": False, "features_or_models_created": False}
     summary_bytes = canonical_json_bytes(summary)
-    packages = {package["dataset_id"]: package["archive_sha256"] for package in config["packages"]}
-    for row in ledger:
-        row["package_sha256"] = packages[row["dataset_id"]]
     ledger.sort(key=lambda row: (row["dataset_id"], row["start_index"]))
+    receipts_bytes = b"".join(
+        canonical_json_bytes(
+            {
+                key: value
+                for key, value in row.items()
+                if key not in {"chunk_receipt_sha256", "first_pass_chunk_manifest"}
+            }
+        )
+        for row in ledger
+    )
     ledger_bytes = b"".join(canonical_json_bytes(row) for row in ledger)
-    manifest = {"config_sha256": _sha256_file(config_path)[0], "source_registration_summary_sha256": config["source_registration_summary_sha256"], "archive_members_sha256": config["archive_members_sha256"], "artifact_sha256": {"recordings.jsonl": sha256_bytes(record_bytes), "sensor_observations.jsonl": sha256_bytes(sensor_bytes), "structural_summary.json": sha256_bytes(summary_bytes), REPLAY_LEDGER: sha256_bytes(ledger_bytes)}, "conclusion": summary["conclusion"]}
-    artifacts = {"recordings.jsonl": record_bytes, "sensor_observations.jsonl": sensor_bytes, "structural_summary.json": summary_bytes, REPLAY_LEDGER: ledger_bytes, "evidence_manifest.json": canonical_json_bytes(manifest)}
+    manifest = {"config_sha256": _sha256_file(config_path)[0], "source_registration_summary_sha256": config["source_registration_summary_sha256"], "archive_members_sha256": config["archive_members_sha256"], "artifact_sha256": {"recordings.jsonl": sha256_bytes(record_bytes), "sensor_observations.jsonl": sha256_bytes(sensor_bytes), "structural_summary.json": sha256_bytes(summary_bytes), REPLAY_RECEIPTS: sha256_bytes(receipts_bytes), REPLAY_LEDGER: sha256_bytes(ledger_bytes)}, "conclusion": summary["conclusion"]}
+    artifacts = {"recordings.jsonl": record_bytes, "sensor_observations.jsonl": sensor_bytes, "structural_summary.json": summary_bytes, REPLAY_RECEIPTS: receipts_bytes, REPLAY_LEDGER: ledger_bytes, "evidence_manifest.json": canonical_json_bytes(manifest)}
     return artifacts, publish(output, artifacts)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(); parser.add_argument("--repo-root", type=Path, default=Path(".")); parser.add_argument("--source-root", type=Path); parser.add_argument("--config", type=Path, default=Path("configs/datasets/ims_sets23_structural_identity_v1.json")); parser.add_argument("--output-dir", type=Path, default=Path("data/manifests/ims_sets23_structural_identity/v3")); parser.add_argument("--chunk-start", type=int, default=0); parser.add_argument("--chunk-size", type=int, default=None); parser.add_argument("--dataset", choices=("ims_set2", "observed_4th_test_candidate_v1")); parser.add_argument("--assemble-chunks", type=Path)
+    parser = argparse.ArgumentParser(); parser.add_argument("--repo-root", type=Path, default=Path(".")); parser.add_argument("--source-root", type=Path); parser.add_argument("--config", type=Path, default=Path("configs/datasets/ims_sets23_structural_identity_v1.json")); parser.add_argument("--output-dir", type=Path, default=Path("data/manifests/ims_sets23_structural_identity/v3")); parser.add_argument("--chunk-start", type=int, default=0); parser.add_argument("--chunk-size", type=int, default=None); parser.add_argument("--dataset", choices=("ims_set2", "observed_4th_test_candidate_v1")); parser.add_argument("--assemble-chunks", type=Path); parser.add_argument("--replay-receipt-dir", type=Path)
     args = parser.parse_args(argv); root = args.repo_root.resolve(); config = args.config if args.config.is_absolute() else root / args.config; output = args.output_dir if args.output_dir.is_absolute() else root / args.output_dir
     if args.chunk_start < 0 or args.chunk_size is not None and args.chunk_size <= 0:
         print("Phase G failed: invalid chunk range", file=sys.stderr); return 2
     if args.assemble_chunks is None and args.source_root is None:
         print("Phase G failed: --source-root is required for a chunk build", file=sys.stderr); return 2
     try:
+        if args.replay_receipt_dir is not None and args.dataset is not None:
+            if args.source_root is None or args.dataset is None or args.chunk_size != 128 or args.assemble_chunks is not None:
+                raise StructuralIdentityError("replay requires source, dataset, and fixed chunk size")
+            receipt = replay_chunk(root, args.source_root.resolve(), config, output, args.replay_receipt_dir.resolve(), args.dataset, args.chunk_start)
+            print(json.dumps({"published": False, "replay_result": receipt["replay_result"]}, sort_keys=True)); return 0
         if args.assemble_chunks is not None:
             if args.source_root is not None or args.dataset is not None or args.chunk_size is not None or args.chunk_start:
                 raise StructuralIdentityError("assembly cannot combine source or chunk options")
-            artifacts, published = assemble_chunks(config, args.assemble_chunks.resolve(), output)
+            if args.replay_receipt_dir is None: raise StructuralIdentityError("assembly requires replay receipts")
+            artifacts, published = assemble_chunks(config, args.assemble_chunks.resolve(), args.replay_receipt_dir.resolve(), output)
         else:
             artifacts, published = build(root, args.source_root.resolve(), config, output, start_index=args.chunk_start, chunk_size=args.chunk_size, dataset_filter=args.dataset)
     except StructuralIdentityError as error: print(f"Phase G failed: {error}", file=sys.stderr); return 2

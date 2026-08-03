@@ -16,7 +16,9 @@ Set 2 `b154d5ba1ae5f7f01cdd4f1bde5b08cfdc2f3134d51ad2f6614b1270a86ab632`
 (85,581,092 bytes) and the source package named `3rd_test.rar`
 `01e9ec83c6c55adc0300a20003a261f9a2ac2b714aae4984050325e589252bc8`
 (609,047,134 bytes). The fixed 128-record chunk plan reparsed every member twice. Each
-replay was a strict byte-identical no-op. The final raw-free assembly was also a strict no-op.
+replay emitted a separate atomic receipt only after the second raw parse matched the
+existing first-pass chunk and returned `published=false`. All 58 receipts were required
+by assembly. The final raw-free assembly was also a strict no-op.
 The repaired replay path opens each archive once with `O_NOFOLLOW`; hashing, full metadata
 listing, selected-member extraction, and post-extraction rehash use that same descriptor
 through `/dev/fd` with inherited descriptor handoff. Device, inode, size, mtime, ctime, and
@@ -41,18 +43,33 @@ null, publisher identity is unverified, and holdout eligibility is deferred.
 
 ## Accepted artifacts
 
-`data/manifests/ims_sets23_structural_identity/v3/` has no raw signal values. It binds a
-58-row replay ledger to its evidence manifest. Every row records exact fixed range coverage,
-Phase F/config/package pins, first-pass and repaired descriptor replay hashes, and
-`strict_noop`. Its hashes are:
+`data/manifests/ims_sets23_structural_identity/v3/` has no raw signal values. It contains
+58 canonical replay receipts and a separate 58-row coverage ledger. The ledger binds each
+receipt hash, the exact first-pass chunk manifest and its hash, fixed range coverage,
+Phase F/config/package pins, first-pass hashes, independently recomputed replay hashes,
+and `strict_noop`. The raw-free validator recomputes the fixed 8 + 50 chunk plan, final
+short-chunk endpoints, member coverage, IDs, mappings, chunk artifacts, and manifest pins.
+Its hashes are:
 
 - `recordings.jsonl`: `e5a204b0b2ec2d79e6aa91b00fe85ba8f98a97f4a621b595a4501ff979f9c3a7`
 - `sensor_observations.jsonl`: `22060bbfb002c5ce6f6a449f3b9ea8cc108d84333d5132e0c06cdca514d14f98`
 - `structural_summary.json`: `619cd57543127b8ab19d8b96035a43aade396352aa6cae4032149ffeb7644789`
-- `chunk_replay_ledger.jsonl`: `568af2a8dc494191749e1a9b4331f8036ac9b797f56ed6b95e66cdda438f637e`
-- `evidence_manifest.json`: `c5380e69fd55ad2bb1aa8f1b2180e5676b0980085ad85b75ac0c5a967773bd8f`
+- `chunk_replay_receipts.jsonl`: `0e255b89822c5b9699d27901ad36f5ed835a65109805bfb8c5ea620163bfc7ae`
+- `chunk_replay_ledger.jsonl`: `bd4a541c3561b65d1e32f27d612b1d675088c45a304e054733f433a6f5e930e1`
+- `evidence_manifest.json`: `a46fd14038c45729ddb0a47ba21af72a076a61634c51b16e27001c28d5c46387`
+
+The unaccepted v2 duplicate package is not part of the final repository evidence. The
+authoritative v3 recordings, sensor observations, and structural summary bytes did not
+change during this receipt repair.
 
 Older full candidates were retained as comparison-only evidence. Their paths, timestamps,
 content hashes, sizes, ordering, and counts match the corrected package; only the authorized
 candidate identity fields differ. A late earlier publication was a monitoring/session-loss
 issue, not a raw-data computation failure.
+
+## Verification
+
+The final repair passed 23 focused Phase G tests and 436 complete DB-free tests. Ruff,
+`git diff --check`, the Phase D/E/F raw-free validators, and the strengthened Phase G
+validator passed. The final assembly rerun was a strict no-op, and the two independently
+assembled receipt-bound candidates were byte-identical.
