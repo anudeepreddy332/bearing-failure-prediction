@@ -214,6 +214,17 @@ orientation remains unknown. The source package named `3rd_test.rar` contains an
 unverified/deferred. Neither dataset role is frozen, and this work authorizes no outcomes,
 features, evaluation, pooling, model work, or serving.
 
+Phase H records the document-supported Set 2 mapping from zero-based channels `0`-`3` to
+physical bearings `1`-`4`, with orientation unknown. It deliberately records all candidate
+physical-bearing assignments as null because the observed candidate conflicts with the local
+document's Set 3 description. Validate the raw-free mapping evidence with:
+
+```bash
+python scripts/validate_sets23_mapping_evidence.py --repo-root . \
+  --config configs/datasets/ims_sets23_mapping_evidence_v1.json \
+  --artifacts data/manifests/ims_sets23_mapping_evidence/v1
+```
+
 ---
 
 ## License

@@ -847,6 +847,26 @@ external holdout designation, exact RUL, failure timing, or a model GO state.
 
 ---
 
+### D-039 — Freeze documented Set 2 channel mapping while preserving candidate uncertainty
+**Decision:** Phase H records only the local-document-supported Set 2 mapping from
+zero-based source channels `0`, `1`, `2`, and `3` to `bearing_1`, `bearing_2`,
+`bearing_3`, and `bearing_4`. Set 2 orientation remains `unknown`. All four
+physical-bearing assignments for `observed_4th_test_candidate_v1` remain null. The
+accepted Phase H status is `PARTIAL_GO_SET2_MAPPING_SUPPORTED_CANDIDATE_UNRESOLVED`.
+**Why:** The local IMS readme page 2 supports the Set 2 channel arrangement, while the
+observed candidate's `3rd_test.rar` outer name, `4th_test/txt` inner root, 6,324 observed
+recordings through 2004-04-18, and the document's Set 3 description of 4,448 recordings
+through 2004-04-04 are contradictory provenance facts. The NASA catalog URL is recorded
+only as publisher-level attribution; it supplies neither this local PDF checksum nor a
+channel-level mapping for the local archive bytes.
+**Scope boundary:** This is outcome-blind mapping evidence only. It does not identify an
+official publisher Set 3 or Set 4 package, transfer a mapping to the observed candidate,
+freeze either dataset's use, create labels, features, models, pooling, adaptation,
+evaluation, or serving work, or authorize training. The sole permitted follow-up is a
+separately authorized dataset-status, provenance, or outcome review.
+
+---
+
 ## Log format for future entries
 
 ```
