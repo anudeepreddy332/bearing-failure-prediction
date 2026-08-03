@@ -65,13 +65,15 @@ legacy database evaluation scripts, are the current evaluation authority.
 
 ## Set 2 boundary
 
-Phase F registers local Set 2 and Set 3 archive packages as **unconsumed** source
-evidence only. It does not extract recordings, parse signals, create identities or
-outcomes, or authorize evaluation. The tracked raw-free registration evidence is in
+Phase F registers local Set 2 and Set 3 archive packages. Phase G consumed them only for
+outcome-blind structural evidence: timestamps, exact numeric shape and finiteness, content
+hashes, channels, and deterministic identities. The tracked raw-free evidence is in
 `data/manifests/ims_sets23_source_packages/v1/`; the ignored local archives remain under
 `data/raw/set2/2nd_test.rar` and `data/raw/set3/3rd_test.rar` when separately provisioned.
-Set 2 remains documentation-approved only for future intake, and Set 3 has no frozen
-role. Do not implement either dataset without separate human authorization and gates.
+Set 2 has an observed structural run identity but no outcome or role decision. The source
+archive named `3rd_test.rar` is recorded as `observed_4th_test_candidate_v1` from its
+`4th_test/txt` inner root; publisher identity and holdout eligibility remain deferred.
+Do not implement downstream work without separate human authorization and gates.
 
 `common_sensor_view_v1` is the approved future cross-dataset contract:
 

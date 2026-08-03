@@ -192,8 +192,9 @@ Data Repository.
 
 ### Set 2/3 Source Registration
 
-Phase F registers ignored local source packages without extracting recordings, parsing
-signals, assigning outcomes, or consuming either dataset. `data/raw/set2/2nd_test.rar`
+Phase F registers ignored local source packages. Phase G subsequently performed one
+outcome-blind structural parse, without assigning outcomes, labels, roles, features, or
+models. `data/raw/set2/2nd_test.rar`
 and `data/raw/set3/3rd_test.rar` are local, untracked archives. Their tracked hashes,
 metadata-only archive indexes, provenance limits, and unconsumed state are under
 `data/manifests/ims_sets23_source_packages/v1/` and can be checked without raw data:
@@ -202,10 +203,12 @@ metadata-only archive indexes, provenance limits, and unconsumed state are under
 python scripts/validate_sets23_source_registration.py --repo-root .
 ```
 
-Set 2 is only a conditional future development-evidence candidate. Set 3 is only a
-conditional future external-holdout candidate. Neither role is frozen, and source
-registration does not authorize Set 2/3 identity construction, outcomes, features,
-evaluation, pooling, model work, or serving.
+Set 2 has 984 structurally valid recordings with an explicit four-channel-to-bearing map;
+orientation remains unknown. The source package named `3rd_test.rar` contains an observed
+`4th_test/txt` root with 6,324 structurally valid recordings and is recorded only as
+`observed_4th_test_candidate_v1`. Its publisher identity and holdout eligibility are
+unverified/deferred. Neither dataset role is frozen, and this work authorizes no outcomes,
+features, evaluation, pooling, model work, or serving.
 
 ---
 
