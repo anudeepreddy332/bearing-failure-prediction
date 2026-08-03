@@ -82,6 +82,18 @@ anywhere** and cannot be filled without new code. Details below.
 > distinct strict-no-op replay receipts plus a receipt-hash and chunk-manifest coverage
 > ledger; the raw-free validator recomputes their fixed ranges and structural bindings.
 
+> Phase H's mapping-only overlay is under
+> `data/manifests/ims_sets23_mapping_evidence/v1/`. Build or strict-no-op validate it with
+> `python -m src.data.sets23_mapping_evidence --repo-root . --config
+> configs/datasets/ims_sets23_mapping_evidence_v1.json --output-dir
+> data/manifests/ims_sets23_mapping_evidence/v1`, then validate it raw-free with
+> `python scripts/validate_sets23_mapping_evidence.py --repo-root . --config
+> configs/datasets/ims_sets23_mapping_evidence_v1.json --artifacts
+> data/manifests/ims_sets23_mapping_evidence/v1`. It records Set 2 channels 0-3 to physical
+> bearings 1-4, keeps orientation unknown, and keeps every observed-candidate mapping null.
+> The optional local PDF check is publication-time provenance only; CI does not require the
+> ignored PDF. This authorizes no outcomes, features, evaluation, models, pooling, or serving.
+
 ---
 
 ## Answers to the 8 discovery questions

@@ -1,0 +1,34 @@
+{
+  "schema_version": "ims_sets23_mapping_evidence_v1",
+  "scope_id": "ims_sets23_phase_h_mapping_evidence_v1",
+  "phase_f_inputs": {
+    "source_registration_summary_path": "data/manifests/ims_sets23_source_packages/v1/source_registration_summary.json",
+    "source_registration_summary_sha256": "639bdecde01150f0aba5731f5239ec6d2c48e96e6b60f9b7e875e006b2895740",
+    "archive_members_path": "data/manifests/ims_sets23_source_packages/v1/archive_members.jsonl",
+    "archive_members_sha256": "a9ac5751e4603f06e97eb48dff35ead71e675b0523a1a015d83dac0dc492a9f3"
+  },
+  "phase_g_inputs": {
+    "config_path": "configs/datasets/ims_sets23_structural_identity_v1.json",
+    "config_sha256": "cc48dbb6603b522ec4cc1af5957263d88d684ae139625a5d3ccc452157ef6973",
+    "evidence_manifest_path": "data/manifests/ims_sets23_structural_identity/v3/evidence_manifest.json",
+    "evidence_manifest_sha256": "a46fd14038c45729ddb0a47ba21af72a076a61634c51b16e27001c28d5c46387",
+    "structural_summary_path": "data/manifests/ims_sets23_structural_identity/v3/structural_summary.json",
+    "structural_summary_sha256": "619cd57543127b8ab19d8b96035a43aade396352aa6cae4032149ffeb7644789",
+    "recordings_path": "data/manifests/ims_sets23_structural_identity/v3/recordings.jsonl",
+    "recordings_sha256": "e5a204b0b2ec2d79e6aa91b00fe85ba8f98a97f4a621b595a4501ff979f9c3a7"
+  },
+  "local_mapping_document": {
+    "relative_path": "data/Readme Document for IMS Bearing Data.pdf",
+    "sha256": "cf46d37c21f7f292c11bbbdd4695d876c417ed1d6425e3d87c962ae2182ae6ed",
+    "mapping_page": 2,
+    "set2_channel_mapping": {"0": "bearing_1", "1": "bearing_2", "2": "bearing_3", "3": "bearing_4"},
+    "set3_documented_recording_count": 4448,
+    "set3_documented_last_timestamp_local": "2004-04-04T19:01:57"
+  },
+  "publisher_attribution": {
+    "url": "https://data.nasa.gov/dataset/IMS-Bearing-Data-Set/5udd-7zpt",
+    "status": "publisher_level_attribution_only"
+  },
+  "accepted_status": "PARTIAL_GO_SET2_MAPPING_SUPPORTED_CANDIDATE_UNRESOLVED",
+  "output_members": ["mapping_overlay.jsonl", "source_evidence_registry.jsonl", "mapping_summary.json", "evidence_manifest.json"]
+}

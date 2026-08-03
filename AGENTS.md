@@ -76,6 +76,13 @@ archive named `3rd_test.rar` is recorded as `observed_4th_test_candidate_v1` fro
 `4th_test/txt` inner root; publisher identity and holdout eligibility remain deferred.
 Do not implement downstream work without separate human authorization and gates.
 
+Phase H records only the documented Set 2 source-channel map: zero-based channels `0`-`3`
+map to physical bearings `1`-`4`; orientation remains unknown. Every physical-bearing
+assignment for `observed_4th_test_candidate_v1` is null because its observed 6,324-recording
+package conflicts with the local document's 4,448-recording Set 3 description. This mapping
+evidence does not freeze dataset use or authorize any outcome, feature, evaluation, model,
+pooling, adaptation, or serving work.
+
 `common_sensor_view_v1` is the approved future cross-dataset contract:
 
 - one sensor-view row per sensor for each physical-bearing timestamp;

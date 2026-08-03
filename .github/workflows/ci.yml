@@ -48,6 +48,12 @@ jobs:
           --repo-root . --config configs/datasets/ims_sets23_structural_identity_v1.json
           --artifacts data/manifests/ims_sets23_structural_identity/v3
 
+      - name: Validate Phase H mapping evidence
+        run: >
+          python scripts/validate_sets23_mapping_evidence.py
+          --repo-root . --config configs/datasets/ims_sets23_mapping_evidence_v1.json
+          --artifacts data/manifests/ims_sets23_mapping_evidence/v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)
