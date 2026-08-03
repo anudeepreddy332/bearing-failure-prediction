@@ -73,9 +73,10 @@ anywhere** and cannot be filled without new code. Details below.
 > authorize any identity, label, feature, evaluation, model, or serving work.
 
 > Phase G's accepted outcome-blind structural identity evidence is under
-> `data/manifests/ims_sets23_structural_identity/v2/` and can be checked without local
-> archives using `python scripts/validate_sets23_structural_identity.py --artifacts
-> data/manifests/ims_sets23_structural_identity/v2`. It records 984 Set 2 recordings and
+> `data/manifests/ims_sets23_structural_identity/v3/` and can be checked without local
+> archives using `python scripts/validate_sets23_structural_identity.py --repo-root . --config
+> configs/datasets/ims_sets23_structural_identity_v1.json --artifacts
+> data/manifests/ims_sets23_structural_identity/v3`. It records 984 Set 2 recordings and
 > 6,324 recordings from an observed `4th_test/txt` candidate package. It authorizes no
 > outcomes, roles, features, evaluation, models, or serving.
 

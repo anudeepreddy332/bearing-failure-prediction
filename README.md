@@ -192,7 +192,7 @@ Data Repository.
 
 ### Set 2/3 Source Registration
 
-Phase F registers ignored local source packages. Phase G subsequently performed one
+Phase F recorded an unconsumed source-registration state at that time. Phase G subsequently performed one
 outcome-blind structural parse, without assigning outcomes, labels, roles, features, or
 models. `data/raw/set2/2nd_test.rar`
 and `data/raw/set3/3rd_test.rar` are local, untracked archives. Their tracked hashes,
