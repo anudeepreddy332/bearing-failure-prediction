@@ -1,5 +1,12 @@
 # Runbook — Recreating the production database from empty
 
+> **Current-path notice:** This runbook preserves reproducible historical evidence paths.
+> The active direction is `docs/PROJECT_ROADMAP.md`,
+> `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043. Phase L freezes the
+> condition-monitoring contract only; no causal monitor, policy comparison, or serving
+> workflow is implemented here. Historical pipeline instructions below do not authorize
+> a new RUL-first model, Set 2 target, or production claim.
+
 **Status as of 2026-07-04:** Postgres is healthy but empty (no `features` table →
 migrations have never been applied). This runbook documents how the canonical
 pipeline is *intended* to build the database, verified by reading every script, and

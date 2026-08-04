@@ -1,14 +1,14 @@
 # IMS Bearing Failure Prediction
 
-Corrective ML validation project for remaining useful life (RUL) prediction on
-the NASA IMS bearing dataset.
+Corrective evidence and condition-monitoring project for the NASA IMS bearing
+dataset.
 
 This repository is **not production-ready** today. Earlier documentation claimed
 production-grade performance from a row-level stratified split, but Phase 1
 validation showed that those metrics were inflated by temporal train/test leakage
-and preprocessing leakage. The current purpose of the project is to make the ML
-methodology honest and reproducible before any API, dashboard, cloud, or MLOps
-productionization work.
+and preprocessing leakage. The current purpose is to establish causal
+condition-deviation monitoring with human-review inspection alerts before any API,
+dashboard, cloud, or productionization work.
 
 ---
 
@@ -16,11 +16,11 @@ productionization work.
 
 | Area | Status |
 | --- | --- |
-| ML objective | Diagnose whether Set 1 endpoint-proxy regression contains bearing-specific signal beyond the shared run clock |
-| Current diagnostic | Fixed sensor-local Ridge diagnostic and explicit shared-run clock reference |
-| Current evidence level | Offline validation and canonical artifact evidence only |
+| Primary objective | Causal condition-deviation monitoring with persistent human-review inspection alerts |
+| Endpoint-proxy boundary | `observed_failure_endpoint_proxy` is a secondary retrospective convention, not exact failure or RUL truth |
+| Current evidence level | Canonical artifacts and governance evidence only; no condition monitor is implemented yet |
 | Production readiness | Not production-ready |
-| Source-of-truth report | `reports/evaluation/phase1_validation_leakage_safe/validation_report.md` |
+| Current direction | `docs/PROJECT_ROADMAP.md`, `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 |
 
 The old headline metrics, including `2.88h` critical-zone MAE, `13.42h` overall
 MAE, and `R2 = 0.9852`, should be treated as **deprecated leaky-baseline results**.
@@ -28,7 +28,7 @@ They are not valid production evidence.
 
 ---
 
-## Leakage-Safe Phase 1 Results
+## Historical Leakage-Safe Phase 1 Results
 
 The leakage-safe validation reran the same selected feature set with fold-local
 preprocessing:
@@ -101,11 +101,22 @@ the frozen identities, folds, targets, zero-second clock oracle, conclusion, and
 discretes, but cannot claim canonical Ridge bytes.
 
 Bearings 3 and 4 are the only documented damaged trajectories and are used for LOBO.
-Bearings 1 and 2 are inference-only censored/undocumented-outcome clock-tracking and
-alert-burden observations, not healthy controls or accuracy labels. See
+Bearings 1 and 2 are inference-only clock-tracking and alert-burden observations with
+no documented terminal damage before observation end, not healthy controls, censored
+labels, or accuracy labels. See
 `reports/evaluation/ims_set1_phase_e_identifiability_v1/validation_report.md`.
 
 ---
+
+## Active Documentation Map
+
+- `docs/PROJECT_ROADMAP.md`: current phase sequence and evidence gates.
+- `docs/CONDITION_MONITORING_ARCHITECTURE.md`: current condition-monitoring and
+  policy-comparison contract.
+- `docs/decisions/DECISIONS.md` D-043: frozen direction and explicit boundaries.
+- `docs/EVALUATION_POLICY.md`: current trajectory-safe evaluation policy.
+- `docs/PRODUCTION_READINESS.md`, `docs/DESIGN_REVIEW.md`, and historical reports:
+  retained snapshots, not current implementation direction.
 
 ## Repository Map
 
@@ -166,14 +177,16 @@ ruff check .
 
 ---
 
-## Recommended Next Steps
+## Current Path
 
-1. Obtain an independently governed target with bearing-specific outcome timing before
-   retuning or interpreting endpoint-proxy metrics as degradation evidence.
-2. Keep Set 2 in its frozen development-evidence role. Do not perform outcome/event-time work
-   or development use without separate authorization; pooling requires a separate ADR.
-3. Do not revisit API/dashboard productionization until an independently valid target
-   and cross-trajectory evidence exist.
+1. Complete the documentation contract in Phase L, then separately authorize Phase M
+   causal condition-monitor implementation.
+2. Compare condition-monitor behavior to run-to-failure, fixed-interval, and
+   elapsed-time-only policies before interpreting signal value.
+3. Keep Set 2 in its frozen development-evidence role. Do not perform outcome/event-time
+   work or development use without separate authorization; pooling requires a separate ADR.
+4. Do not revisit API/dashboard productionization until later evidence supports a
+   human-review workflow and prospective validation.
 
 ---
 

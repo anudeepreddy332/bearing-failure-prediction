@@ -1,6 +1,6 @@
 # Set 2 Intake Architecture and Terra Handoff Plan
 
-**Status:** Historical intake architecture. Phase I freezes `ims_set2` as
+**Current status -- historical design only:** Phase I freezes `ims_set2` as
 `development_evidence` with prior terminal metadata awareness; it remains unusable until a
 separately authorized use. Phase J adjudicates terminal metadata only: bearing 1 has documented
 terminal damage with timing unknown, while bearings 2-4 have no reported bearing-specific
@@ -8,7 +8,8 @@ terminal outcome and no established terminal event. It concludes no supervised t
 created from available metadata. It is not an untouched or blind external holdout. Historical
 sections below that describe an exact failure/RUL-zero endpoint,
 censoring, or an external-validation role are superseded as current assumptions and retained
-only as historical design context.
+only as historical design context. D-043 and `docs/PROJECT_ROADMAP.md` are the active
+direction; this document does not authorize Set 2 targets, development use, or evaluation.
 
 **Phase K update:** A finite primary and secondary documentation search found no authoritative
 bearing-linked event timestamp or independently supported interval bounds. Repeated claims that
@@ -246,8 +247,8 @@ local hash and byte size, and a metadata-only archive index in
 `data/manifests/ims_sets23_source_packages/v1/`. This is source registration, not Set 2
 consumption. No archive member was extracted for this registration, no signal payload was
 parsed, and no Set 2 identity, outcome, feature, split, evaluation, model, or serving
-artifact exists. The package remains a conditional development-evidence candidate only;
-the external-before-pooling rule remains in force.
+artifact exists. At that historical Phase F point, the package remained a conditional
+development-evidence candidate and the external-before-pooling rule was proposed.
 
 ### 5.2 Permitted integrity checks and consumption boundary
 
@@ -262,7 +263,8 @@ a persisted derived artifact, or supplies Set 2 observations to any feature, fit
 scoring, drift, or evaluation operation. At that first consumption point, the run must
 record the archive hash, manifest version, config hash, code revision, command, and
 output artifact identifier. A checksum or member-list inspection alone does not consume
-Set 2. Set 2 remains external-validation data before any pooling decision.
+Set 2. The historical proposal treated Set 2 as external-validation data before any
+pooling decision; Phase I's frozen development-evidence role is the current truth.
 
 ### 5.3 Transactional extraction
 

@@ -927,6 +927,67 @@ separate acceptance decision.
 
 ---
 
+### D-043 — Freeze causal condition-monitoring direction before new modeling
+**Decision:** The primary product objective is causal condition-deviation monitoring
+that emits persistent inspection alerts for human review. It supports maintenance
+decisions and does not automatically command replacement. For a trajectory whose
+official IMS manual identifies terminal damage, the final observation timestamp may
+be used only as the documented modeling convention
+`observed_failure_endpoint_proxy`. This supports secondary retrospective time-to-
+observed-endpoint benchmarks; it is not exact failure onset, a last-good/first-bad
+record, functional-failure threshold, or field maintenance truth.
+
+**Why:** Phase E proved that the Set 1 observed-run-end proxy is exactly explained by
+the shared experiment clock, so learning elapsed experiment age is not evidence of
+bearing condition. Phases J and K found no authoritative Set 2 bearing-linked event
+time or interval, so no supervised Set 2 target is authorized. Set 1 has only two
+documented terminal failures, which remains an irreducible statistical limitation.
+
+**Required next implementation contract:** Fit an early-prefix, robust sensor-local
+baseline and reference behavior for each monitored trajectory; score later timestamps
+causally without future information or full-trajectory normalization; aggregate the
+two sensor views with fixed documented weights at the physical-bearing timestamp;
+then apply causal change detection and persistence/hysteresis. The only scientific
+states are `baseline-consistent`, `deviation-observed`,
+`persistent-severe-deviation`, and `insufficient-evidence`. These are deviation
+regimes, not healthy, warning, failure, maintenance, or RUL truth. Endpoint proximity
+may be used only after scoring for retrospective evaluation, never for feature fitting,
+threshold fitting, or online scoring. A small sensitivity grid for baseline-prefix
+length, reference neighbors, threshold, persistence, and sensor weighting must be
+predeclared.
+
+**Evaluation and business boundary:** Physical trajectories, rather than rows or
+sensor views, are the unit of grouping. Use chronological or purged evaluation with
+fold-local preprocessing. Elapsed-time-only and fixed-interval policies are mandatory
+baselines, and a signal monitor must outperform them before claiming
+condition-monitoring value. Report baseline stability, descriptive trendability and
+monotonicity, cross-bearing consistency, alert burden, persistence/hysteresis, lead
+time to the observed endpoint, abstention, and sensitivity. Alert burden is not a
+false-positive rate without supported state truth, and observed-endpoint lead time is
+not failure lead time. Later policy work must compare run to failure, fixed-interval
+replacement, elapsed-time-only, endpoint-proxy supervised benchmark, and signal-based
+condition monitor using explicit client inputs for downtime, replacement, inspection,
+intervention lead time, lost remaining life, and operating horizon/population. Until
+prospective client evidence exists, report ranges and sensitivity only, never
+guaranteed savings, production effectiveness, exact failure timing, or automatic
+replacement readiness.
+
+**Dataset boundary:** Set 1 is development evidence. Set 2 retains its frozen Phase I
+role and is not authorized for use by this decision; the observed candidate remains
+protected until source and identity resolution. Any later external validation, client
+data contract, field pilot, or serving work needs separate authorization and evidence.
+
+**Rejected alternatives:** RUL-first retuning, random row-split selection,
+age-only evidence, automatic replacement, and immediate Set 2 target/model work are
+rejected because they conflict with the established leakage, identifiability, role,
+and event-evidence boundaries.
+
+**Supersession:** This is the active direction for roadmap, architecture, and
+evaluation guidance. It supersedes conflicting active RUL-first or retune-next
+instructions without rewriting historical decisions, audits, reports, or prototypes.
+
+---
+
 ## Log format for future entries
 
 ```
