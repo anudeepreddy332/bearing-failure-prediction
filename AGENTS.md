@@ -85,6 +85,10 @@ no established terminal event. It creates no targets. No candidate outcome, sign
 target, feature, model, or measured-performance evidence is consumed; only the accepted Phase I
 role artifact containing its protected-role row is indirectly pinned and read for role preservation.
 A run-end countdown is a shared experiment-clock proxy, not bearing RUL.
+Phase K performed one finite primary and secondary documentation search. It found no
+authoritative bearing-linked event timestamp or independently supported interval bounds, so Set 2
+target creation remains prohibited. Reopen this only for a specifically identified new primary
+inspection, teardown, test, or event record.
 Do not implement downstream work without separate human authorization and gates.
 
 Phase H records only the documented Set 2 source-channel map: zero-based channels `0`-`3`

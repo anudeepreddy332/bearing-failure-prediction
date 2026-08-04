@@ -233,6 +233,11 @@ RUL, classification, survival, or early-warning target was created. It consumes 
 outcome, signal, label, target, feature, model, or measured-performance evidence; it only pins
 and reads the accepted Phase I role artifact to preserve the candidate's protected-role boundary.
 
+Phase K performed one finite documentation search across the producer readme, the official NASA
+catalog, experiment-author publication metadata, and secondary ML sources. None supplied an
+authoritative bearing-linked event time or interval bounds. Set 2 target creation remains
+`NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA`.
+
 ---
 
 ## License
