@@ -1,17 +1,28 @@
-# Business-Aligned Evaluation Policy
+# Condition Monitoring and Policy Evaluation
 
-This document defines the evaluation objective future retuning must follow. It
-supersedes any model-selection process that optimizes only generic MAE or R2.
+This document defines the active evaluation objective. Causal condition-deviation
+monitoring with persistent human-review inspection alerts is primary. Historical
+endpoint-proxy regression is secondary retrospective context, not the current
+product objective.
 
 Source-of-truth baseline for this policy:
 `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
 
-**Label boundary:** Historical "RUL" metrics evaluate the observed-run-end proxy used
-by the legacy pipeline, not exact physical RUL truth or exact failure-time accuracy.
-They must be described as endpoint-proxy metrics unless separately supported event-time
-evidence is introduced.
+**Evidence boundary:** For a trajectory whose official IMS manual identifies terminal
+damage, the final observation timestamp may be used only as the documented
+`observed_failure_endpoint_proxy` convention. It is not exact failure onset, a
+last-good/first-bad record, functional-failure threshold, or field maintenance truth.
+Phase E showed that the Set 1 observed-run-end proxy is exactly reproducible from the
+shared experiment clock; experiment age alone is not condition sensitivity.
 
-## Current Evidence
+The next separately authorized monitor must use an early-prefix sensor-local baseline,
+causal scoring, physical-bearing aggregation, a causal change detector, and
+persistence/hysteresis. It may emit only `baseline-consistent`,
+`deviation-observed`, `persistent-severe-deviation`, or `insufficient-evidence`.
+Those are deviation regimes, not healthy, warning, failure, maintenance, or RUL truth.
+Endpoint proximity may be joined only after scoring for retrospective evaluation.
+
+## Historical Endpoint-Proxy Evidence
 
 Leakage-safe Phase 1 metrics:
 
@@ -24,7 +35,7 @@ Leakage-safe Phase 1 metrics:
 The row-level baseline is diagnostic only. It must not be used to select or
 promote a model because it has same-bearing timestamp contamination.
 
-## Deployment Questions
+## Historical Endpoint-Proxy Questions
 
 The project has two distinct predictive-maintenance questions:
 
@@ -33,14 +44,10 @@ The project has two distinct predictive-maintenance questions:
 | Can the model generalize to a failed bearing not seen during training? | Leave-One-Bearing-Out (LOBO) | Primary |
 | Can the model monitor a known bearing over time without adjacent-row leakage? | Purged time-series CV | Required secondary |
 
-Primary tuning objective: **LOBO business-risk score**.
+This historical policy does not authorize RUL-first retuning or model promotion. The
+old row-level baseline remains only a leakage-inflation comparison.
 
-Purged time-series CV is a required secondary check. A model may not be promoted
-if it improves LOBO while catastrophically degrading purged-CV warning behavior.
-
-The old row-level baseline remains only a leakage-inflation comparison.
-
-## Threshold Policy
+## Historical Threshold Policy
 
 Current thresholds:
 
@@ -55,7 +62,7 @@ agreement, repair lead time, or subject-matter-expert sign-off**. Retuning must
 therefore report sensitivity at both thresholds and label them provisional until
 business data justifies them.
 
-## Required Metrics
+## Historical Endpoint-Proxy Metrics
 
 Every future tuning run must report these metrics for LOBO and purged time-series
 CV:
@@ -75,7 +82,7 @@ CV:
 | Sample counts and RUL distribution | Counts by split/fold/RUL bin | Guards against empty or unrepresentative folds |
 | Split contamination checks | Exact key overlap and same-bearing timestamp overlap | Validates leakage-free evaluation |
 
-## Scalar Objective For Automated Tuning
+## Historical Scalar Objective
 
 If Optuna or another tuner requires one scalar objective, use this provisional
 LOBO score:
@@ -104,21 +111,24 @@ This scalar score is provisional. Replace the weights once actual downtime cost,
 maintenance dispatch cost, bearing replacement cost, and required lead time are
 known.
 
-## Model Selection Rules
+## Current Selection Rules
 
-Future retuning must follow these rules:
+Any separately authorized monitor or benchmark must follow these rules:
 
-1. Optimize on leakage-safe LOBO business-risk score.
-2. Report purged time-series CV as a required secondary result.
-3. Report both mean and worst-fold values.
-4. Do not select a model using the row-level baseline.
-5. Do not promote a model that has train/test key overlap or same-bearing
-   timestamp overlap in LOBO or purged validation.
-6. Do not claim production readiness from Set 1 alone.
-7. Treat improvements as provisional until Set 2/3 add more independent failure
-   trajectories.
+1. Group by physical trajectory and use chronological or purged evaluation with
+   fold-local preprocessing.
+2. Treat elapsed-time-only and fixed-interval policies as mandatory baselines. A
+   signal monitor must outperform them before claiming condition-monitoring value.
+3. Report baseline stability, descriptive trendability/monotonicity, cross-bearing
+   consistency, alert burden, persistence/hysteresis, lead time to the observed
+   endpoint, abstention, and sensitivity.
+4. Do not call alert burden a false-positive rate, or observed-endpoint lead time a
+   failure lead time, without defensible state truth.
+5. Do not select a model using row-level baselines or data with same-bearing
+   timestamp overlap.
+6. Do not claim production readiness or generalization from Set 1 alone.
 
-## Lead-Time Proxy
+## Historical Lead-Time Proxy
 
 A lead-time proxy is feasible from current time-ordered RUL labels, but it is not
 yet present in the Phase 1 CSV outputs.
@@ -134,25 +144,34 @@ Future tuning reports should add per-bearing lead-time metrics:
 These are proxies, not business-validated lead-time metrics, until maintenance
 planning lead time is provided.
 
-## Business Interpretation
+## Current Policy and Business Boundary
 
-For predictive maintenance, a missed critical warning is usually more expensive
-than a false alarm because it can allow unplanned downtime, secondary damage, or
-safety risk. A false alarm still has real cost: unnecessary inspection, premature
-replacement, alert fatigue, and loss of operator trust.
+Later policy work must compare run to failure, fixed-interval replacement,
+elapsed-time-only, endpoint-proxy supervised benchmark, and signal-based condition
+monitor. Its scenario inputs must be explicit:
 
-Until a real cost matrix exists, this project should favor catching critical
-near-failure samples over minimizing false alarms, but it must report both. A
-model that catches failures only by flagging everything as critical is not useful.
+```text
+total cost = unplanned failures * failure/downtime cost
+           + planned replacements * replacement cost
+           + premature-life loss cost
+           + inspections * inspection cost
+```
+
+Client-supplied inputs are failure/downtime cost, planned replacement cost,
+inspection cost, intervention lead time, lost remaining-life cost, and operating
+horizon/population. The decision ladder is `monitor -> inspect -> schedule
+maintenance -> urgent action`. State persistence, hysteresis, abstention, and the
+human inspection gate protect against premature replacement. Until prospective client
+evidence exists, report ranges and sensitivity, not guaranteed savings, production
+effectiveness, exact failure timing, or automatic-replacement readiness.
 
 ## Current Technical Priority
 
-Do not productionize the API/dashboard or retune against the observed-run-end proxy
-yet. Phase E established that this Set 1 target is exactly recoverable from the shared
-experiment clock, so it cannot distinguish bearing degradation from run position. The
-next technical priority is an independently governed target with bearing-specific outcome
-timing or a separately authorized external-validation design. Set 2 remains
-external-before-pooling and is not automatically authorized by any Phase E metric.
+Do not productionize the API/dashboard or retune against the observed-run-end proxy.
+Phase L freezes the condition-monitoring contract before the separately authorized
+Phase M implementation. Set 2 retains its frozen Phase I role and has no current use
+authorization; Phases J and K prohibit supervised target creation from current metadata.
+The observed candidate remains protected until source/identity resolution.
 
 Phase E's recorded canonical-publication runtime owns its exact diagnostic bytes. A
 portability-validation runtime may validate frozen identities, folds, endpoint-proxy

@@ -1,5 +1,10 @@
 # Production Readiness Audit & Refactor Blueprint
 
+> **Historical snapshot:** This audit records a 2026-07-04 review and is not the active
+> project direction. Use `docs/PROJECT_ROADMAP.md`,
+> `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 for current guidance. The audit
+> does not authorize production work, RUL-first retuning, or a claim of readiness.
+
 **Repository:** `ims-bearing-failure-prediction`
 **Reviewed:** 2026-07-04
 **Reviewer role:** Staff ML Platform / MLOps / hiring-committee read
