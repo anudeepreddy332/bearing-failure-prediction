@@ -9,6 +9,12 @@ created from available metadata. It is not an untouched or blind external holdou
 sections below that describe an exact failure/RUL-zero endpoint,
 censoring, or an external-validation role are superseded as current assumptions and retained
 only as historical design context.
+
+**Phase K update:** A finite primary and secondary documentation search found no authoritative
+bearing-linked event timestamp or independently supported interval bounds. Repeated claims that
+damage occurred at experiment end or labels built from run end remain insufficient; target
+creation remains prohibited unless a specifically identified new primary event record is later
+adjudicated.
 **Scope:** IMS Set 2 immutable intake, canonical representation, validation, and
 future external-validation integration
 **Out of scope:** archive extraction, data transformation, model training,

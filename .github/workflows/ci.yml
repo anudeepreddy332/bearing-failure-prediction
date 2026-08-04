@@ -66,6 +66,12 @@ jobs:
           --repo-root . --config configs/datasets/ims_set2_outcome_evidence_v1.json
           --artifacts data/manifests/ims_set2_outcome_evidence/v1
 
+      - name: Validate Phase K Set 2 event-evidence search
+        run: >
+          python scripts/validate_set2_event_evidence.py --repo-root . --config
+          configs/datasets/ims_set2_event_evidence_search_v1.json --artifacts
+          data/manifests/ims_set2_event_evidence/v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)

@@ -910,6 +910,23 @@ independently supported event-free and damaged bounds.
 
 ---
 
+### D-042 — Close one finite Set 2 event-evidence search without a timing upgrade
+**Decision:** Phase K records `NO_GO_NO_NEW_AUTHORITATIVE_EVENT_EVIDENCE`. The finite source
+set consists of the hash-pinned local producer readme, the official NASA IMS catalog, and
+experiment-author publication metadata. A separate discovery-only registry records five finite
+secondary leads: three publicly inspectable sources and two inaccessible leads. None provides an authoritative physical-bearing event timestamp or
+independently supported event-free and damaged bounds for Set 2. The Phase J target NO-GO remains
+unchanged.
+**Why:** Terminal damage by experiment end does not establish event timing. Repeated secondary
+claims, run-end countdowns, derived warning thresholds, signal-derived labels, and unverified
+repository material cannot upgrade that evidence.
+**Scope boundary:** This does not create labels, targets, features, models, evaluation, pooling,
+adaptation, or serving work. It does not consume candidate outcome or signal evidence. Reopening
+requires a specifically identified new primary inspection, teardown, test, or event record and a
+separate acceptance decision.
+
+---
+
 ## Log format for future entries
 
 ```
