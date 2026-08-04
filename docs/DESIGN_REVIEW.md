@@ -1,5 +1,10 @@
 # Design Review — Response to Principal-Engineer Peer Review
 
+> **Historical snapshot:** This 2026-07-04 review is retained as context, not active
+> project direction. Use `docs/PROJECT_ROADMAP.md`,
+> `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 for current guidance. It does
+> not authorize RUL-first work, model deployment, or production claims.
+
 **Date:** 2026-07-04
 **Branch:** `production-readiness-refactor` (nothing merged/pushed to `main`)
 **Author stance:** independent technical evaluation. Where I disagree with the

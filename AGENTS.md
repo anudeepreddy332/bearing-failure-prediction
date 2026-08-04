@@ -5,15 +5,18 @@ evidence of model performance.
 
 ## Project status and evidence boundary
 
-This repository is a corrective ML validation project for bearing remaining useful
-life (RUL) prediction using the NASA IMS dataset. It is **not production-ready**.
+This repository is a corrective evidence and condition-monitoring project using the
+NASA IMS dataset. Its primary product objective is causal condition-deviation
+monitoring with persistent human-review inspection alerts, not automatic bearing
+replacement or a claim of exact RUL. It is **not production-ready**.
 
 The existing tuned LightGBM artifact, Streamlit dashboard, and FastAPI endpoint are
 historical prototypes. Their old headline metrics came from row-level RUL-bin
 stratification and pre-split preprocessing; they are not valid evidence of unseen
 bearing or production generalization.
 
-Leakage-safe Phase 1 is the performance source of truth:
+Leakage-safe Phase 1 is historical evidence of why row-level RUL claims are not
+usable as the active direction:
 
 | Strategy | MAE | Interpretation |
 | --- | ---: | --- |
@@ -29,6 +32,9 @@ trajectories makes all current generalization evidence statistically thin.
 
 Read before making ML, evaluation, documentation, or Set 2 changes:
 
+- `docs/PROJECT_ROADMAP.md`;
+- `docs/CONDITION_MONITORING_ARCHITECTURE.md`;
+- `docs/decisions/DECISIONS.md` D-043;
 - `docs/decisions/DECISIONS.md` D-021 through D-028;
 - `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`;
 - `docs/EVALUATION_POLICY.md`;
@@ -37,25 +43,28 @@ Read before making ML, evaluation, documentation, or Set 2 changes:
 - `docs/decisions/DECISIONS.md` D-035 through D-036 and
   `reports/evaluation/ims_set1_phase_e_identifiability_v1/validation_report.md`.
 
-Do not make production, broad generalization, or maintenance-savings claims from the
-historical artifact or from Set 1 alone. Do not select a model using a row-level split.
+Do not make production, broad generalization, guaranteed maintenance-savings, or exact
+maintenance-timing claims from the historical artifact or from Set 1 alone. Do not
+select a model using a row-level split.
 
 ## Evaluation rules
 
-`src/models/offline_validation.py` is the DB-free, artifact-preserving validation path.
-It compares the historical row-level baseline with LOBO and purged time-series CV and
-performs fold-local preprocessing in leakage-safe mode. Its reports, rather than the
-legacy database evaluation scripts, are the current evaluation authority.
+`src/models/offline_validation.py` is a DB-free, artifact-preserving historical
+validation path. Its reports establish leakage and endpoint-proxy limitations; they
+do not define the next product. The active evaluation contract is in
+`docs/EVALUATION_POLICY.md` and D-043.
 
 - Treat the `src/data/split_stratified.py` output as a historical/leaky baseline only.
   It uses `train_test_split` over feature rows stratified by RUL bin and does not prove
   temporal or unseen-bearing generalization.
-- Follow `docs/EVALUATION_POLICY.md` for any separately authorized retuning: LOBO
-  business-risk score is primary; purged time-series CV is a required secondary guard.
-- Fit feature selection, normalization, imputation, and temporal transforms on training
-  data only within each fold. Preserve prior reports and write new outputs separately.
-- The current critical (RUL <= 50h) and warning (RUL <= 100h) thresholds are provisional
-  project conventions, not business-approved operating thresholds.
+- Any separately authorized monitor must group physical trajectories, evaluate
+  chronologically or with a purge, and fit preprocessing within each fold. Preserve
+  prior reports and write new outputs separately.
+- Elapsed-time-only and fixed-interval policies are mandatory baselines. A signal
+  monitor must outperform them under trajectory-safe evaluation before claiming
+  condition-monitoring value; learning experiment age alone is not enough.
+- Endpoint proximity is retrospective evaluation only. It cannot fit monitor features,
+  thresholds, or online scoring, and it is not failure lead time.
 - Phase E established that the observed-run-end proxy is exactly reproduced by the shared
   experiment clock for Set 1. Do not retune, rank, or promote a model against that proxy
   as bearing-degradation evidence. The fixed Phase E Ridge diagnostic is not a GO signal.
@@ -112,9 +121,10 @@ outcome, feature, evaluation, model, pooling, adaptation, or serving work.
   pooling still requires a separately authorized ADR.
 
 The permitted pre-consumption checks and the point at which Set 2 becomes consumed are
-defined in `docs/SET2_INTAKE_DESIGN.md` and D-027. Documentation approval is not
-implementation authorization. See `docs/SET3_INTAKE_DESIGN.md` and D-037 for the
-parallel Set 3 source boundary.
+defined in `docs/SET2_INTAKE_DESIGN.md` and D-027. Phase G structural processing does
+not authorize outcome, feature, model, or evaluation work. Documentation approval is
+not implementation authorization. See `docs/SET3_INTAKE_DESIGN.md` and D-037 for the
+parallel source boundary.
 
 ## Environment and tests
 
@@ -166,7 +176,9 @@ promote, deploy, or change them as if they represented a validated model.
 ## Change discipline
 
 - Preserve historical reports and clearly label historical/leaky outputs.
-- Keep Set 1 failure/censoring semantics explicit: 3/4 failed; 1/2 censored.
+- Keep Set 1 terminal-evidence semantics explicit: bearings 3 and 4 have documented
+  terminal damage; bearings 1 and 2 have no documented terminal damage before
+  observation end and are not event-free, healthy, or censored labels.
 - Do not pool Set 2 or make Set 2 implementation changes without the documented gates
   and separate authorization.
 - Do not bypass leakage-safe validation to improve headline metrics.
