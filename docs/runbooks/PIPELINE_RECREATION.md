@@ -111,6 +111,13 @@ anywhere** and cannot be filled without new code. Details below.
 > documented terminal damage and bearings 2-4 as not adjudicable because a terminal event is not
 > established. It returns `NO_GO_SUPERVISED_TARGET_FROM_AVAILABLE_METADATA`; it creates no target.
 
+> Phase K's finite event-evidence search is under
+> `data/manifests/ims_set2_event_evidence/v1`. Validate it raw-free with
+> `python scripts/validate_set2_event_evidence.py --repo-root . --config
+> configs/datasets/ims_set2_event_evidence_search_v1.json --artifacts
+> data/manifests/ims_set2_event_evidence/v1`. It found no authoritative exact event time or
+> interval bounds and returns `NO_GO_NO_NEW_AUTHORITATIVE_EVENT_EVIDENCE`.
+
 ---
 
 ## Answers to the 8 discovery questions
