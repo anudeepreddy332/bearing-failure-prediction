@@ -1,0 +1,17 @@
+{
+  "scope_id": "ims_set1_condition_monitor_v1",
+  "schema_version": "ims_set1_condition_monitor_v1",
+  "phase_b_summary": {"path": "data/canonical/ims_set1/v1/canonicalization_summary.json", "sha256": "1ecc9aa095c4d364bb0f65bf6baf2c4f0a891192b0ea38a64f7b98e441e81361"},
+  "phase_b_bearing_observations": {"path": "data/canonical/ims_set1/v1/bearing_observations.jsonl", "sha256": "4ddd2e62c6d0003fad0cfbd9884a979929a361730ac3ba8f4bd9a18904087e2f"},
+  "phase_b_sensor_observations": {"path": "data/canonical/ims_set1/v1/sensor_observations.jsonl", "sha256": "fdf52f29ac7bebec66d9b5b805439aac35ac2d65817b06ed1c4586e7ac3e7789"},
+  "phase_d_manifest": {"path": "data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json", "sha256": "2a81a75fa6c467557678155b6ae398be2d4d1cfa6aafc7750c0c06c613c49dac"},
+  "phase_d_features": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/sensor_observation_base_features.jsonl", "sha256": "1248745eeaab2f2be395c01f961d6e0a801c2837b0f282dde5ab0038ad2ea60f"},
+  "phase_d_feature_definitions": {"path": "data/canonical/ims_set1_sensor_local_base_features/v1/feature_definitions.json", "sha256": "88eafb6cf54420dcaec96e6f623c2b4106c710c00bdd57a8aa53ebc2bcfc804d"},
+  "phase_d_feature_config": {"path": "configs/features/ims_set1_sensor_local_base_v1.json", "sha256": "c586d816c0710a289aa669e8d57b6702fa099ad24dd94b5e58b8714f51c5fdcf"},
+  "retrospective_phase_c_summary": {"path": "data/canonical/ims_set1_outcomes/v1/labeling_summary.json", "sha256": "9cda60864f796aae65008ac00fa8ca15613cccab0bf25a519343303a7ff981ea"},
+  "feature_registry_indices": [11, 12, 13, 14, 15, 16, 17],
+  "sensor_weights": [0.5, 0.5],
+  "primary": {"baseline_observations": 288, "neighbors": 10, "deviation_quantile": 0.99, "reset_quantile": 0.95, "persistence_observations": 6, "release_observations": 6, "quantile_method": "linear"},
+  "sensitivity": {"baseline_observations": [144, 576], "neighbors": [5, 20], "deviation_quantile": [0.975, 0.995], "persistence_observations": [3, 12]},
+  "output_members": ["baseline_reference_state.json", "sensor_scores.jsonl", "bearing_timestamp_states.jsonl", "trajectory_monitor_summary.jsonl", "clock_sentinel_analysis.json", "retrospective_endpoint_analysis.json", "sensitivity_results.jsonl", "validation_summary.json", "evidence_manifest.json", "validation_report.md"]
+}

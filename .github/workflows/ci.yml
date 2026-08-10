@@ -72,6 +72,20 @@ jobs:
           configs/datasets/ims_set2_event_evidence_search_v1.json --artifacts
           data/manifests/ims_set2_event_evidence/v1
 
+      - name: Rebuild and validate Phase M condition-monitor evidence
+        run: |
+          first=$(mktemp -d)
+          second=$(mktemp -d)
+          python -m src.models.set1_condition_monitor --repo-root . \
+            --output-dir "$first/artifacts"
+          python -m src.models.set1_condition_monitor --repo-root . \
+            --output-dir "$second/artifacts"
+          diff -r "$first/artifacts" "$second/artifacts"
+          python scripts/validate_set1_condition_monitor.py --repo-root . \
+            --artifacts "$first/artifacts"
+          python scripts/validate_set1_condition_monitor.py --repo-root . \
+            --artifacts reports/evaluation/ims_set1_condition_monitor_v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)
