@@ -50,8 +50,8 @@ maintenance timing.
 | I | Freeze dataset roles | Complete: `6197324`; `data/manifests/ims_sets23_role_freeze/v1/` | Roles preserve prior metadata awareness without authorizing use. |
 | J | Adjudicate Set 2 terminal metadata | Complete: `e7cd06`; `data/manifests/ims_set2_outcome_evidence/v1/` | No supervised Set 2 target is justified from available metadata. |
 | K | Search for authoritative Set 2 event evidence | Complete: `34dfc08`; `data/manifests/ims_set2_event_evidence/v1/` | No bearing-linked event time or interval was found; target creation remains prohibited. |
-| L | Freeze condition-monitoring direction | Current documentation contract | Integrate this contract before any implementation of the monitor. |
-| M | Implement Set 1 causal condition monitor | Planned, separately authorized | Demonstrate causal scoring and human-review states without target leakage. |
+| L | Freeze condition-monitoring direction | Complete: `f91cfe9`; D-043 and active roadmap/architecture | The implementation contract is integrated without authorizing serving. |
+| M | Implement Set 1 causal condition monitor | Current implementation evidence | Demonstrate causal scoring and human-review states without target leakage. |
 | N | Compare policies and scenario costs | Planned, separately authorized | Compare predeclared policies with explicit assumptions and ranges. |
 | O | Perform frozen external validation | Planned, separately authorized | Consider Set 2 first; consider the observed candidate only after source/identity resolution. |
 | P | Build production engineering controls | Planned, separately authorized | Require streaming feature parity, versioned inference, monitoring, rollback, and human-review workflow. |

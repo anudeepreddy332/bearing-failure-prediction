@@ -18,7 +18,7 @@ dashboard, cloud, or productionization work.
 | --- | --- |
 | Primary objective | Causal condition-deviation monitoring with persistent human-review inspection alerts |
 | Endpoint-proxy boundary | `observed_failure_endpoint_proxy` is a secondary retrospective convention, not exact failure or RUL truth |
-| Current evidence level | Canonical artifacts and governance evidence only; no condition monitor is implemented yet |
+| Current evidence level | Canonical evidence includes a Set 1-only causal condition monitor; it has no target, deployment, or savings claim |
 | Production readiness | Not production-ready |
 | Current direction | `docs/PROJECT_ROADMAP.md`, `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 |
 
@@ -179,8 +179,8 @@ ruff check .
 
 ## Current Path
 
-1. Complete the documentation contract in Phase L, then separately authorize Phase M
-   causal condition-monitor implementation.
+1. Validate the Phase M causal condition-monitor evidence and its causal/abstention
+   contract before any policy or external-validation work.
 2. Compare condition-monitor behavior to run-to-failure, fixed-interval, and
    elapsed-time-only policies before interpreting signal value.
 3. Keep Set 2 in its frozen development-evidence role. Do not perform outcome/event-time

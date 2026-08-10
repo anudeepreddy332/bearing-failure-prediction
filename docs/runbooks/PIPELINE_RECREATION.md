@@ -7,6 +7,14 @@
 > workflow is implemented here. Historical pipeline instructions below do not authorize
 > a new RUL-first model, Set 2 target, or production claim.
 
+> **Phase M current evidence:** `ims_set1_condition_monitor_v1` is a Set 1-only,
+> causal condition-deviation package. It consumes pinned Phase B/D evidence, publishes
+> bearing-level deviation states, and uses Phase C only after scoring for retrospective
+> observed-endpoint description. It is not RUL, failure-time prediction, automatic
+> replacement, Set 2 use, or serving. Validate it raw-free with
+> `python scripts/validate_set1_condition_monitor.py --repo-root . --artifacts
+> reports/evaluation/ims_set1_condition_monitor_v1`.
+
 **Status as of 2026-07-04:** Postgres is healthy but empty (no `features` table →
 migrations have never been applied). This runbook documents how the canonical
 pipeline is *intended* to build the database, verified by reading every script, and

@@ -988,6 +988,38 @@ instructions without rewriting historical decisions, audits, reports, or prototy
 
 ---
 
+### D-044 — Publish Set 1 causal condition-deviation evidence without target fitting
+**Decision:** Phase M publishes `ims_set1_condition_monitor_v1` as Set 1-only causal
+condition-deviation evidence. It uses only pinned Phase B physical identities and
+the seven Phase D registry features 11-17. Each physical-bearing timestamp combines
+exactly two sensor views at fixed weights 0.5 and 0.5. The primary monitor uses the
+first 288 sensor observations for baseline-only median/IQR (MAD fallback) scaling,
+median distance to ten sensor-local baseline neighbors, leave-one-out baseline
+calibration, bearing-specific 0.99/0.95 linear-quantile thresholds, six-observation
+persistence, and six-observation release. Its only states are
+`baseline-consistent`, `deviation-observed`, `persistent-severe-deviation`, and
+`insufficient-evidence`.
+
+**Why:** D-043 requires a causal, interpretable condition-deviation path before any
+new supervised work. The monitor cannot use timestamps, recording indices, run end,
+outcomes, endpoint proxies, future observations, full-trajectory normalization, or
+Phase C data for fitting, scoring, calibration, thresholds, states, or sensitivity.
+Missing an expected sensor view produces abstention rather than reweighting. A
+separate post-score retrospective Phase C join may report lead to the observed endpoint
+for documented damaged bearings 3/4 only; it is not failure lead time. Bearings 1/2
+contribute alert burden and abstention descriptions only, not false-positive rates or
+healthy-control evidence.
+
+**Evidence boundary:** One-at-a-time sensitivity varies only baseline length,
+neighbors, deviation quantile, or persistence and never selects a winner. A separately
+labelled elapsed-time clock sentinel is post-score only. The valid negative conclusion
+`condition_information_beyond_clock_not_established` is publishable and is not a
+model failure to optimize away. This decision creates no Set 2/candidate access,
+supervised target, endpoint tuning, policy-cost work, model promotion, API/dashboard,
+deployment, or production claim.
+
+---
+
 ## Log format for future entries
 
 ```

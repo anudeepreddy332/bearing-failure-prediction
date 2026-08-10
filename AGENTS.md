@@ -35,6 +35,7 @@ Read before making ML, evaluation, documentation, or Set 2 changes:
 - `docs/PROJECT_ROADMAP.md`;
 - `docs/CONDITION_MONITORING_ARCHITECTURE.md`;
 - `docs/decisions/DECISIONS.md` D-043;
+- `docs/decisions/DECISIONS.md` D-044;
 - `docs/decisions/DECISIONS.md` D-021 through D-028;
 - `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`;
 - `docs/EVALUATION_POLICY.md`;
@@ -65,6 +66,10 @@ do not define the next product. The active evaluation contract is in
   condition-monitoring value; learning experiment age alone is not enough.
 - Endpoint proximity is retrospective evaluation only. It cannot fit monitor features,
   thresholds, or online scoring, and it is not failure lead time.
+- Phase M consumes only pinned Phase B identities and Phase D features. It emits
+  condition-deviation states at physical-bearing timestamp grain with fixed sensor
+  weights, and it may abstain. It is not RUL, an outcome model, automatic replacement,
+  or authorization for Set 2/candidate use.
 - Phase E established that the observed-run-end proxy is exactly reproduced by the shared
   experiment clock for Set 1. Do not retune, rank, or promote a model against that proxy
   as bearing-degradation evidence. The fixed Phase E Ridge diagnostic is not a GO signal.
