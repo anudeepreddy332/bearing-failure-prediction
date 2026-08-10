@@ -1,0 +1,13 @@
+{
+  "scope_id": "ims_set1_clock_comparator_proof_v1",
+  "schema_version": "ims_set1_clock_comparator_proof_v1",
+  "phase_m_config": {"path": "configs/models/ims_set1_condition_monitor_v1.json", "sha256": "edfc04a91714d84809e4664ecc05d0ae2710910782dc60f594856d54304fed3f"},
+  "phase_m_manifest": {"path": "reports/evaluation/ims_set1_condition_monitor_v1/evidence_manifest.json", "sha256": "a6dd3166acd8296c86066c08eefea04e1fdd6061908eed68a7ed25c81c38693c"},
+  "phase_m_states": {"path": "reports/evaluation/ims_set1_condition_monitor_v1/bearing_timestamp_states.jsonl", "sha256": "d121b5ee742e8a88a9e70d5184b13b88e3ff9a55028a967ba68351f93eca88ab"},
+  "phase_m_sensitivity": {"path": "reports/evaluation/ims_set1_condition_monitor_v1/sensitivity_results.jsonl", "sha256": "72f6bdfc53898004feeaac2ee5051cac6ae40935c53d7cc507bbf0388af7e481"},
+  "phase_m_retrospective": {"path": "reports/evaluation/ims_set1_condition_monitor_v1/retrospective_endpoint_analysis.json", "sha256": "5188f44f9df1d44acfe4e5c1deaa75563b4e7c483e238ba923c6b02c6ac7c4b7"},
+  "primary_baseline_observations": 288,
+  "elapsed_time_schedule": {"schedule_type": "common_elapsed_seconds", "persistent_alert_start_elapsed_seconds": 604800},
+  "fixed_interval_inspection": {"schedule_type": "fixed_observation_interval", "post_baseline_interval_observations": 144},
+  "output_members": ["comparator_definitions.json", "trajectory_metrics.jsonl", "clock_disagreement.json", "sensitivity_stability.json", "decision_summary.json", "evidence_manifest.json", "validation_report.md"]
+}
