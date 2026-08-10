@@ -1005,15 +1005,19 @@ new supervised work. The monitor cannot use timestamps, recording indices, run e
 outcomes, endpoint proxies, future observations, full-trajectory normalization, or
 Phase C data for fitting, scoring, calibration, thresholds, states, or sensitivity.
 Missing an expected sensor view produces abstention rather than reweighting. A
-separate post-score retrospective Phase C join may report lead to the observed endpoint
-for documented damaged bearings 3/4 only; it is not failure lead time. Bearings 1/2
+separate post-score retrospective Phase C join may report lead to the authorized
+`observed_failure_endpoint_proxy` for documented damaged bearings 3/4 only. This is a
+project modeling convention for their final recorded timestamps, not an independently
+observed damage onset, last-good/first-bad time, functional-failure threshold, or exact
+physical event instant. Bearings 1/2
 contribute alert burden and abstention descriptions only, not false-positive rates or
 healthy-control evidence.
 
 **Evidence boundary:** One-at-a-time sensitivity varies only baseline length,
 neighbors, deviation quantile, or persistence and never selects a winner. A separately
-labelled elapsed-time clock sentinel is post-score only. The valid negative conclusion
-`condition_information_beyond_clock_not_established` is publishable and is not a
+labelled elapsed-time clock sentinel is post-score only and does not execute a clock
+comparator. The valid default NO-GO conclusion
+`default_no_go_clock_value_not_tested_or_established` is publishable and is not a
 model failure to optimize away. This decision creates no Set 2/candidate access,
 supervised target, endpoint tuning, policy-cost work, model promotion, API/dashboard,
 deployment, or production claim.

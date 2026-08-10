@@ -14,7 +14,8 @@ decision; it cannot automatically command bearing replacement.
 For a trajectory whose official IMS manual identifies terminal damage, the final
 observation timestamp may be used only as the documented modeling convention
 `observed_failure_endpoint_proxy`. It supports secondary retrospective benchmarks
-for time to the observed endpoint. It is not exact failure onset, a last-good or
+for lead to the authorized `observed_failure_endpoint_proxy` on documented failed
+trajectories. It is not exact failure onset, a last-good or
 first-bad timestamp, a functional-failure threshold, or field maintenance truth.
 
 Set 1 is development evidence. Set 2 retains its frozen Phase I role and is not

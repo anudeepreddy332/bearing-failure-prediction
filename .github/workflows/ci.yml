@@ -83,6 +83,7 @@ jobs:
           diff -r "$first/artifacts" "$second/artifacts"
           python scripts/validate_set1_condition_monitor.py --repo-root . \
             --artifacts "$first/artifacts"
+          diff -r "$first/artifacts" reports/evaluation/ims_set1_condition_monitor_v1
           python scripts/validate_set1_condition_monitor.py --repo-root . \
             --artifacts reports/evaluation/ims_set1_condition_monitor_v1
 
