@@ -1,8 +1,9 @@
 # Condition Monitoring Architecture
 
-This is the active architecture for the next authorized implementation phase. It
-separates existing evidence foundations from the planned condition monitor. No
-monitor, alert, replacement policy, or serving path is implemented by this document.
+This is the active architecture for the condition-monitoring evidence path. Phase M
+implemented the causal monitor as Set 1-only evidence, and Phase N killed its policy
+claim as not robust beyond the clock. No replacement policy or serving path is
+implemented by this document.
 
 ## Product Contract
 
@@ -27,14 +28,13 @@ flowchart LR
     M --> N["Scenario-cost evidence"]
 ```
 
-The manifest/identity/outcome evidence and canonical sensor-local features are
-implemented foundations. The early-prefix baseline through outcome feedback are
-planned components. Evaluation and scenario-cost work remain planned and cannot
-claim a field result.
+The manifest/identity/outcome evidence, canonical sensor-local features, and
+early-prefix monitor are implemented foundations. Human-review workflow, policy, and
+scenario-cost work remain planned and cannot claim a field result.
 
 ## Planned Causal Monitor Contract
 
-For each monitored physical trajectory, the future Phase M implementation must:
+For each monitored physical trajectory, the Phase M monitor:
 
 1. Fit a robust sensor-local baseline and nearest-neighbor/reference behavior from
    only an early prefix of that trajectory.
@@ -51,10 +51,10 @@ These are deviation regimes. They are not healthy, warning, failure, maintenance
 or RUL truth. Endpoint proximity may be joined only after scoring for retrospective
 evaluation; it cannot fit features or thresholds and cannot enter online scoring.
 
-Before implementation, Phase M must predeclare a small sensitivity grid for baseline
-prefix length, reference-neighbor count, deviation threshold, persistence, and sensor
-weighting. It may not tune against a final endpoint proxy or use model selection to
-search this grid opportunistically.
+Phase M predeclared a small sensitivity grid for baseline prefix length,
+reference-neighbor count, deviation threshold, persistence, and sensor weighting. It
+does not tune against a final endpoint proxy or use model selection to search this grid
+opportunistically.
 
 ## Evaluation and Policy Contract
 
@@ -65,13 +65,19 @@ and sensitivity. Alert burden is not
 a false-positive rate without defensible state truth. Lead time is not failure lead
 time. Accuracy, AUC, and F1 are not claims without supported labels.
 
-Phase N will compare five policies:
+The planned policy comparison, if separately reauthorized after a new evidence path,
+would compare five policies:
 
 1. Run to failure.
 2. Fixed-interval replacement.
 3. Elapsed-time-only policy.
 4. Endpoint-proxy supervised benchmark.
 5. Signal-based condition monitor.
+
+Phase N ran the prerequisite frozen clock-comparator proof instead. Its
+`KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK` result blocks policy and scenario-cost
+implementation from the current monitor evidence: sensitivity ordering was not stable
+and per-variant alert-onset ordering was not available in the frozen evidence.
 
 The scenario calculation must keep each client-supplied input visible:
 

@@ -15,12 +15,14 @@ last-good/first-bad record, functional-failure threshold, or field maintenance t
 Phase E showed that the Set 1 observed-run-end proxy is exactly reproducible from the
 shared experiment clock; experiment age alone is not condition sensitivity.
 
-The next separately authorized monitor must use an early-prefix sensor-local baseline,
-causal scoring, physical-bearing aggregation, a causal change detector, and
-persistence/hysteresis. It may emit only `baseline-consistent`,
+The Phase M monitor used an early-prefix sensor-local baseline, causal scoring,
+physical-bearing aggregation, a causal change detector, and persistence/hysteresis. It
+emits only `baseline-consistent`,
 `deviation-observed`, `persistent-severe-deviation`, or `insufficient-evidence`.
 Those are deviation regimes, not healthy, warning, failure, maintenance, or RUL truth.
-Endpoint proximity may be joined only after scoring for retrospective evaluation.
+Endpoint proximity may be joined only after scoring for retrospective evaluation. Phase
+N subsequently produced `KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK`; no policy/value
+claim or optimization is authorized from the current monitor evidence.
 
 ## Historical Endpoint-Proxy Evidence
 
