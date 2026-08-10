@@ -19,6 +19,7 @@ from src.data.set1_manifest import canonical_json_bytes, sha256_bytes
 
 SCOPE_ID = "ims_set1_condition_monitor_v1"
 FEATURE_INDICES = tuple(range(11, 18))
+CONCLUSION = "default_no_go_clock_value_not_tested_or_established"
 STATES = (
     "baseline-consistent",
     "deviation-observed",
@@ -86,7 +87,9 @@ def _jsonl(raw: bytes, label: str) -> list[dict[str, Any]]:
         raise MonitorError(f"invalid UTF-8 in {label}") from error
     if not lines:
         raise MonitorError(f"empty JSONL: {label}")
-    return [_json(line.encode("utf-8"), f"{label} row {number}") for number, line in enumerate(lines, 1) if line.strip()]
+    if any(not line.strip() for line in lines):
+        raise MonitorError(f"blank JSONL row: {label}")
+    return [_json(line.encode("utf-8"), f"{label} row {number}") for number, line in enumerate(lines, 1)]
 
 
 def _relative(value: Any, label: str) -> str:
@@ -246,16 +249,26 @@ def _scaled(row: dict[str, Any], medians: np.ndarray, scales: np.ndarray, usable
     return (vector - medians) / scales
 
 
-def _score(reference: tuple[list[str], np.ndarray], vector: np.ndarray | None, neighbors: int, exclude: str | None = None) -> float | None:
+def _nearest(reference: tuple[list[str], np.ndarray], vector: np.ndarray | None, neighbors: int, exclude: str | None = None) -> list[tuple[float, str]] | None:
     if vector is None:
         return None
     ids, vectors = reference
-    mask = np.asarray([key != exclude for key in ids], dtype=bool)
-    distances = [(float(value), ids[index]) for index, value in enumerate(np.linalg.norm(vectors[mask] - vector, axis=1))]
+    selected = [index for index, key in enumerate(ids) if key != exclude]
+    distances = [
+        (float(value), ids[index])
+        for index, value in zip(selected, np.linalg.norm(vectors[selected] - vector, axis=1), strict=True)
+    ]
     if len(distances) < neighbors:
         return None
     distances.sort(key=lambda value: (value[0], value[1]))
-    return float(np.median(np.asarray([value for value, _ in distances[:neighbors]], dtype=np.float64)))
+    return distances[:neighbors]
+
+
+def _score(reference: tuple[list[str], np.ndarray], vector: np.ndarray | None, neighbors: int, exclude: str | None = None) -> float | None:
+    nearest = _nearest(reference, vector, neighbors, exclude)
+    if nearest is None:
+        return None
+    return float(np.median(np.asarray([value for value, _ in nearest], dtype=np.float64)))
 
 
 def _stream_positions(records: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
@@ -264,8 +277,8 @@ def _stream_positions(records: list[dict[str, Any]]) -> dict[str, list[dict[str,
         streams[row["sensor_id"]].append(row)
     for rows in streams.values():
         rows.sort(key=lambda row: (row["timestamp_local"], row["sensor_observation_id"]))
-    if len(streams) != 8 or any(len(rows) != 2_156 for rows in streams.values()):
-        raise MonitorError("unexpected sensor stream cardinality")
+    if len(streams) != 8:
+        raise MonitorError("expected eight Set 1 sensor streams")
     return dict(streams)
 
 
@@ -275,6 +288,8 @@ def _monitor(records: list[dict[str, Any]], params: dict[str, Any]) -> tuple[lis
     sensor_rows: dict[str, dict[str, Any]] = {}
     state: dict[str, Any] = {"scope_id": SCOPE_ID, "baseline_observations": baseline_count, "neighbors": neighbors, "quantile_method": "linear", "streams": [], "trajectories": {}}
     for sensor_id, rows in sorted(streams.items()):
+        if len(rows) < baseline_count:
+            raise MonitorError("insufficient sensor observations for baseline")
         baseline = rows[:baseline_count]
         medians, scales, usable = _scaler(baseline)
         scaled = [_scaled(row, medians, scales, usable) for row in rows]
@@ -302,26 +317,32 @@ def _monitor(records: list[dict[str, Any]], params: dict[str, Any]) -> tuple[lis
     for observation_id, views in by_bearing.items():
         views.sort(key=lambda row: (row["source_channel_index"], row["sensor_observation_id"]))
         first = views[0]
-        if len(views) != 2 or sum(row["sensor_weight"] for row in views) != 1.0 or views[0]["observation_index"] != views[1]["observation_index"]:
-            raise MonitorError("sensor aggregation contract mismatch")
-        complete = all(row["score"] is not None for row in views)
+        channel = first["source_channel_index"]
+        expected_channels = {0, 1} if channel in {0, 1} else {2, 3} if channel in {2, 3} else {4, 5} if channel in {4, 5} else {6, 7}
+        actual_channels = {row["source_channel_index"] for row in views}
+        if len(actual_channels) != len(views) or not actual_channels <= expected_channels:
+            raise MonitorError("sensor aggregation channel contract mismatch")
+        complete = actual_channels == expected_channels and all(row["score"] is not None for row in views)
         aggregate = sum(row["sensor_weight"] * float(row["score"]) for row in views) if complete else None
-        value = {"bearing_observation_id": observation_id, "physical_bearing_id": first["physical_bearing_id"], "trajectory_id": first["trajectory_id"], "timestamp_local": first["timestamp_local"], "observation_index": first["observation_index"], "sensor_view_count": 2, "sensor_weight_sum": 1.0, "aggregate_score": aggregate, "vector_complete": complete}
+        value = {"bearing_observation_id": observation_id, "physical_bearing_id": first["physical_bearing_id"], "trajectory_id": first["trajectory_id"], "timestamp_local": first["timestamp_local"], "sensor_view_count": len(views), "sensor_weight_sum": sum(row["sensor_weight"] for row in views), "aggregate_score": aggregate, "vector_complete": complete}
         per_trajectory[first["trajectory_id"]].append(value)
     for trajectory, rows in sorted(per_trajectory.items()):
         rows.sort(key=lambda row: (row["timestamp_local"], row["bearing_observation_id"]))
+        for position, row in enumerate(rows):
+            row["observation_index"] = position
         baseline_scores = [float(row["aggregate_score"]) for row in rows[:baseline_count] if row["aggregate_score"] is not None]
-        if len(baseline_scores) != baseline_count:
-            raise MonitorError("incomplete aggregate baseline calibration")
-        threshold = _quantile(baseline_scores, params["deviation_quantile"])
-        reset = _quantile(baseline_scores, params["reset_quantile"])
-        if reset > threshold:
-            raise MonitorError("invalid reset threshold")
+        threshold: float | None = None
+        reset: float | None = None
+        if len(baseline_scores) == baseline_count:
+            threshold = _quantile(baseline_scores, params["deviation_quantile"])
+            reset = _quantile(baseline_scores, params["reset_quantile"])
+            if reset > threshold:
+                raise MonitorError("invalid reset threshold")
         state["trajectories"][trajectory] = {"physical_bearing_id": rows[0]["physical_bearing_id"], "deviation_threshold": threshold, "reset_threshold": reset}
         consecutive, release, severe = 0, 0, False
         for row in rows:
             score = row["aggregate_score"]
-            if row["observation_index"] < baseline_count or score is None:
+            if threshold is None or reset is None or row["observation_index"] < baseline_count or score is None:
                 status = "insufficient-evidence"
                 consecutive, release, severe = 0, 0, False
             elif severe:
@@ -369,7 +390,7 @@ def _clock_sentinel(rows: list[dict[str, Any]]) -> dict[str, Any]:
     for trajectory in sorted({row["trajectory_id"] for row in rows}):
         selected = [row for row in rows if row["trajectory_id"] == trajectory]
         per_trajectory.append({"trajectory_id": trajectory, "physical_bearing_id": selected[0]["physical_bearing_id"], "first_timestamp_local": selected[0]["timestamp_local"], "last_timestamp_local": selected[-1]["timestamp_local"], "timestamp_count": len(selected), "persistent_severe_count": sum(row["state"] == "persistent-severe-deviation" for row in selected)})
-    return {"scope_id": SCOPE_ID, "label": "post_score_clock_sentinel_not_monitor_feature", "monitor_inputs_include_elapsed_time": False, "per_trajectory": per_trajectory}
+    return {"scope_id": SCOPE_ID, "label": "post_score_clock_sentinel_not_monitor_feature", "monitor_inputs_include_elapsed_time": False, "clock_comparator_executed": False, "per_trajectory": per_trajectory}
 
 
 def _retrospective(repo: Path, cfg: dict[str, Any], monitor_rows: list[dict[str, Any]], monitor_hashes: dict[str, str]) -> tuple[dict[str, Any], dict[str, str]]:
@@ -395,7 +416,7 @@ def _retrospective(repo: Path, cfg: dict[str, Any], monitor_rows: list[dict[str,
         if endpoint is None or type(endpoint.get("observed_run_endpoint_proxy_seconds")) is not int:
             raise MonitorError("retrospective endpoint contract mismatch")
         first = next((row for row in rows if row["state"] == "persistent-severe-deviation"), None)
-        per_bearing.append({"physical_bearing_id": bearing, "trajectory_id": rows[0]["trajectory_id"], "timestamp_count": len(rows), "first_persistent_severe_timestamp_local": None if first is None else first["timestamp_local"], "lead_to_observed_endpoint_seconds": None if first is None else endpoints[first["bearing_observation_id"]]["observed_run_endpoint_proxy_seconds"], "interpretation": "retrospective_observed_endpoint_only_not_failure_lead_time"})
+        per_bearing.append({"physical_bearing_id": bearing, "trajectory_id": rows[0]["trajectory_id"], "timestamp_count": len(rows), "first_persistent_severe_timestamp_local": None if first is None else first["timestamp_local"], "lead_to_observed_failure_endpoint_proxy_seconds": None if first is None else endpoints[first["bearing_observation_id"]]["observed_run_endpoint_proxy_seconds"], "interpretation": "retrospective_authorized_failure_endpoint_proxy_not_physical_event_instant"})
     burden = [{"physical_bearing_id": bearing, "timestamp_count": len(selected), "persistent_severe_fraction": sum(row["state"] == "persistent-severe-deviation" for row in selected) / len(selected), "interpretation": "alert_burden_not_false_positive_rate_or_healthy_control"} for bearing in ("bearing_1", "bearing_2") for selected in [[row for row in monitor_rows if row["physical_bearing_id"] == bearing]]]
     return {"scope_id": SCOPE_ID, "analysis_stage": "post_score_retrospective_only", "monitor_artifact_sha256": monitor_hashes, "damaged_bearings": per_bearing, "nonterminal_bearing_alert_burden": burden, "failure_time_claim": False}, {"retrospective_phase_c_summary": summary_hash, "phase_c_endpoint_proxies": sha256_bytes(endpoint_raw), "phase_c_trajectory_outcomes": sha256_bytes(outcomes_raw)}
 
@@ -404,13 +425,38 @@ def _jsonl_bytes(rows: list[dict[str, Any]], key: tuple[str, ...]) -> bytes:
     return b"".join(canonical_json_bytes(row) for row in sorted(rows, key=lambda row: tuple(row[name] for name in key)))
 
 
-def _report(summary: dict[str, Any]) -> bytes:
+def _report(summary: dict[str, Any], trajectory_summary: list[dict[str, Any]], sensitivity: list[dict[str, Any]], retrospective: dict[str, Any]) -> bytes:
+    state_lines = "\n".join(
+        f"- {row['physical_bearing_id']}: {row['state_counts']}; post-baseline persistent-severe fraction "
+        f"{row['state_counts']['persistent-severe-deviation'] / (row['timestamp_count'] - 288):.6f}."
+        for row in trajectory_summary
+    )
+    sensitivity_lines = "\n".join(
+        f"- {row['variant_id']} / {row['physical_bearing_id']}: {row['state_counts']}."
+        for row in sensitivity
+    )
+    damaged_lines = "\n".join(
+        f"- {row['physical_bearing_id']}: first persistent severe {row['first_persistent_severe_timestamp_local']}; "
+        f"lead to authorized failure-endpoint proxy {row['lead_to_observed_failure_endpoint_proxy_seconds']} seconds. "
+        "This is not an independently observed physical event instant."
+        for row in retrospective["damaged_bearings"]
+    )
+    burden_lines = "\n".join(
+        f"- {row['physical_bearing_id']}: persistent-severe fraction {row['persistent_severe_fraction']:.6f}; "
+        "alert burden only, not false-positive or healthy-control evidence."
+        for row in retrospective["nonterminal_bearing_alert_burden"]
+    )
     return ("# Phase M Condition-Monitor Validation\n\n"
             f"Scope: `{SCOPE_ID}`.\n\n"
             "This package is Set 1-only causal condition-deviation evidence. It is not RUL, failure-time prediction, automatic replacement, deployment, or a model-promotion claim.\n\n"
             "The monitor uses only the seven Phase D features with registry indices 11-17, baseline-only sensor scaling, sensor-local nearest-baseline scoring, fixed 0.5/0.5 physical-bearing aggregation, and predeclared persistence/hysteresis. Initial baseline observations and incomplete two-view evidence are `insufficient-evidence`.\n\n"
-            "Endpoint proxies are absent from fitting, scoring, calibration, thresholds, states, and sensitivity. A separate post-score retrospective analysis reports lead to the observed endpoint for documented damaged bearings only; it is never failure lead time. Bearings 1/2 contribute alert burden and abstention descriptions only.\n\n"
-            f"Conclusion: `{summary['conclusion']}`. This is descriptive evidence only; Set 2, the observed candidate, targets, policy cost, and serving remain outside scope.\n").encode("utf-8")
+            "Endpoint proxies are absent from fitting, scoring, calibration, thresholds, states, and sensitivity. A separate post-score retrospective analysis reports lead to the authorized failure-endpoint proxy for documented damaged bearings only. This modeling convention is not damage onset, last-good/first-bad, a functional-failure threshold, or an instrumented exact physical event instant. Bearings 1/2 contribute alert burden and abstention descriptions only.\n\n"
+            "## Primary state counts\n\n" + state_lines + "\n\n"
+            "## Retrospective failure-endpoint-proxy description\n\n" + damaged_lines + "\n\n"
+            "## Bearing 1/2 alert burden\n\n" + burden_lines + "\n\n"
+            "## One-at-a-time sensitivity\n\n" + sensitivity_lines + "\n\n"
+            "**Operational instability warning:** baseline length 144 produces near-universal persistent severe states. Extensive deviation may represent condition change, experiment drift, or fragile baseline choice; it is not a promotion signal.\n\n"
+            f"Conclusion: `{summary['conclusion']}`. The clock sentinel verifies only exclusion from monitor inputs; no elapsed-time comparator was executed. This is default NO-GO evidence only: no model promotion, serving, business-value, Set 2, observed-candidate, target, or policy-cost implication.\n").encode("utf-8")
 
 
 def _publish(output: Path, payloads: dict[str, bytes]) -> bool:
@@ -452,12 +498,12 @@ def build(repo: Path, config_path: Path, output: Path) -> tuple[bool, dict[str, 
     }
     monitor_hashes = {name: sha256_bytes(value) for name, value in monitor_payloads.items()}
     retrospective, retrospective_pins = _retrospective(repo, cfg, bearing_rows, monitor_hashes)
-    validation = {"scope_id": SCOPE_ID, "conclusion": "condition_information_beyond_clock_not_established", "bearing_timestamp_count": len(bearing_rows), "sensor_score_count": len(sensor_rows), "trajectory_count": len(trajectory_summary), "states": list(STATES), "monitor_inputs": "pinned Phase B identities and Phase D feature values only", "endpoint_use": "post_score_retrospective_only", "set2_accessed": False, "raw_data_accessed": False, "model_promotion": False}
+    validation = {"scope_id": SCOPE_ID, "conclusion": CONCLUSION, "bearing_timestamp_count": len(bearing_rows), "sensor_score_count": len(sensor_rows), "trajectory_count": len(trajectory_summary), "states": list(STATES), "monitor_inputs": "pinned Phase B identities and Phase D feature values only", "endpoint_use": "post_score_authorized_failure_endpoint_proxy_only", "clock_comparator_executed": False, "set2_accessed": False, "raw_data_accessed": False, "model_promotion": False}
     monitor_payloads["retrospective_endpoint_analysis.json"] = canonical_json_bytes(retrospective)
     monitor_payloads["validation_summary.json"] = canonical_json_bytes(validation)
-    monitor_payloads["validation_report.md"] = _report(validation)
+    monitor_payloads["validation_report.md"] = _report(validation, trajectory_summary, sensitivity, retrospective)
     output_hashes = {name: sha256_bytes(value) for name, value in monitor_payloads.items()}
-    manifest = {"scope_id": SCOPE_ID, "semantic_config_sha256": pins["semantic_config"], "monitor_input_sha256": pins, "retrospective_input_sha256": retrospective_pins, "source_sha256": sha256_bytes(_read(Path(__file__), "Phase M source")), "output_sha256": output_hashes, "output_members": list(OUTPUTS), "raw_data_accessed": False, "set2_accessed": False, "candidate_accessed": False, "supervised_target_created": False, "phase_c_usage": "post_score_retrospective_endpoint_convention_only"}
+    manifest = {"scope_id": SCOPE_ID, "conclusion": CONCLUSION, "semantic_config_sha256": pins["semantic_config"], "monitor_input_sha256": pins, "retrospective_input_sha256": retrospective_pins, "source_sha256": sha256_bytes(_read(Path(__file__), "Phase M source")), "output_sha256": output_hashes, "output_members": list(OUTPUTS), "raw_data_accessed": False, "set2_accessed": False, "candidate_accessed": False, "supervised_target_created": False, "phase_c_usage": "post_score_authorized_failure_endpoint_proxy_only"}
     monitor_payloads["evidence_manifest.json"] = canonical_json_bytes(manifest)
     ordered = {name: monitor_payloads[name] for name in OUTPUTS}
     return _publish(output, ordered), validation

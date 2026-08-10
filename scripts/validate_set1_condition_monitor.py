@@ -15,17 +15,24 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.data.set1_manifest import sha256_bytes  # noqa: E402
+from src.data.set1_manifest import canonical_json_bytes, sha256_bytes  # noqa: E402
 from src.models.set1_condition_monitor import (  # noqa: E402
+    CONCLUSION,
     OUTPUTS,
     SCOPE_ID,
     STATES,
     MonitorError,
+    _clock_sentinel,
     _json,
     _jsonl,
+    _jsonl_bytes,
     _pin,
     _read,
     _relative,
+    _report,
+    _retrospective,
+    _sensitivity,
+    _monitor,
     load_monitor_inputs,
 )
 
@@ -86,12 +93,43 @@ def _number(value: Any, label: str, nullable: bool = False) -> float | None:
     return float(value)
 
 
+def _trajectory_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result = []
+    for trajectory in sorted({row["trajectory_id"] for row in rows}):
+        selected = [row for row in rows if row["trajectory_id"] == trajectory]
+        result.append({"trajectory_id": trajectory, "physical_bearing_id": selected[0]["physical_bearing_id"], "timestamp_count": len(selected), "sensor_view_count": len(selected) * 2, "state_counts": {state: sum(row["state"] == state for row in selected) for state in STATES}, "deviation_threshold": selected[0]["deviation_threshold"], "reset_threshold": selected[0]["reset_threshold"]})
+    return result
+
+
 def validate(repo: Path, config: Path, artifacts: Path) -> dict[str, Any]:
     try:
         cfg, records, pins = load_monitor_inputs(repo, config)
     except MonitorError as error:
         raise ValidationError(f"monitor inputs failed: {error}") from error
     values = _members(artifacts)
+    try:
+        expected_sensor, expected_bearing, expected_baseline = _monitor(records, cfg["primary"])
+        expected_sensitivity = _sensitivity(records, cfg["primary"], cfg["sensitivity"])
+        expected_summary = _trajectory_summary(expected_bearing)
+        expected_monitor = {
+            "baseline_reference_state.json": canonical_json_bytes(expected_baseline),
+            "sensor_scores.jsonl": _jsonl_bytes(expected_sensor, ("physical_bearing_id", "timestamp_local", "source_channel_index", "sensor_observation_id")),
+            "bearing_timestamp_states.jsonl": _jsonl_bytes(expected_bearing, ("physical_bearing_id", "timestamp_local", "bearing_observation_id")),
+            "trajectory_monitor_summary.jsonl": _jsonl_bytes(expected_summary, ("physical_bearing_id",)),
+            "clock_sentinel_analysis.json": canonical_json_bytes(_clock_sentinel(expected_bearing)),
+            "sensitivity_results.jsonl": _jsonl_bytes(expected_sensitivity, ("variant_id", "physical_bearing_id")),
+        }
+        expected_monitor_hashes = {name: sha256_bytes(value) for name, value in expected_monitor.items()}
+        expected_retrospective, expected_retrospective_pins = _retrospective(repo, cfg, expected_bearing, expected_monitor_hashes)
+        expected_validation = {"scope_id": SCOPE_ID, "conclusion": CONCLUSION, "bearing_timestamp_count": len(expected_bearing), "sensor_score_count": len(expected_sensor), "trajectory_count": len(expected_summary), "states": list(STATES), "monitor_inputs": "pinned Phase B identities and Phase D feature values only", "endpoint_use": "post_score_authorized_failure_endpoint_proxy_only", "clock_comparator_executed": False, "set2_accessed": False, "raw_data_accessed": False, "model_promotion": False}
+        expected_monitor["retrospective_endpoint_analysis.json"] = canonical_json_bytes(expected_retrospective)
+        expected_monitor["validation_summary.json"] = canonical_json_bytes(expected_validation)
+        expected_monitor["validation_report.md"] = _report(expected_validation, expected_summary, expected_sensitivity, expected_retrospective)
+    except MonitorError as error:
+        raise ValidationError(f"primary monitor recomputation failed: {error}") from error
+    for name, expected in expected_monitor.items():
+        if values[name] != expected:
+            raise ValidationError(f"full primary monitor recomputation mismatch: {name}")
     baseline = _object(values["baseline_reference_state.json"], "baseline state")
     _keys(baseline, {"scope_id", "baseline_observations", "neighbors", "quantile_method", "streams", "trajectories"}, "baseline state")
     if baseline["scope_id"] != SCOPE_ID or baseline["baseline_observations"] != 288 or baseline["neighbors"] != 10 or baseline["quantile_method"] != "linear" or not isinstance(baseline["streams"], list) or len(baseline["streams"]) != 8 or not isinstance(baseline["trajectories"], dict) or len(baseline["trajectories"]) != 4:
@@ -160,16 +198,16 @@ def validate(repo: Path, config: Path, artifacts: Path) -> dict[str, Any]:
         if row["timestamp_count"] != 2_156 or row["selection_status"] != "descriptive_one_at_a_time_not_winner_selection" or set(row["state_counts"]) != set(STATES):
             raise ValidationError("invalid sensitivity row")
     clock = _object(values["clock_sentinel_analysis.json"], "clock sentinel")
-    _keys(clock, {"scope_id", "label", "monitor_inputs_include_elapsed_time", "per_trajectory"}, "clock sentinel")
-    if clock["scope_id"] != SCOPE_ID or clock["label"] != "post_score_clock_sentinel_not_monitor_feature" or clock["monitor_inputs_include_elapsed_time"] is not False:
+    _keys(clock, {"scope_id", "label", "monitor_inputs_include_elapsed_time", "clock_comparator_executed", "per_trajectory"}, "clock sentinel")
+    if clock["scope_id"] != SCOPE_ID or clock["label"] != "post_score_clock_sentinel_not_monitor_feature" or clock["monitor_inputs_include_elapsed_time"] is not False or clock["clock_comparator_executed"] is not False:
         raise ValidationError("clock sentinel boundary mismatch")
     retrospective = _object(values["retrospective_endpoint_analysis.json"], "retrospective endpoint analysis")
     _keys(retrospective, {"scope_id", "analysis_stage", "monitor_artifact_sha256", "damaged_bearings", "nonterminal_bearing_alert_burden", "failure_time_claim"}, "retrospective endpoint analysis")
     if retrospective["scope_id"] != SCOPE_ID or retrospective["analysis_stage"] != "post_score_retrospective_only" or retrospective["failure_time_claim"] is not False or [row.get("physical_bearing_id") for row in retrospective["damaged_bearings"]] != ["bearing_3", "bearing_4"]:
         raise ValidationError("retrospective boundary mismatch")
     manifest = _object(values["evidence_manifest.json"], "evidence manifest")
-    _keys(manifest, {"scope_id", "semantic_config_sha256", "monitor_input_sha256", "retrospective_input_sha256", "source_sha256", "output_sha256", "output_members", "raw_data_accessed", "set2_accessed", "candidate_accessed", "supervised_target_created", "phase_c_usage"}, "evidence manifest")
-    if manifest["scope_id"] != SCOPE_ID or manifest["monitor_input_sha256"] != pins or manifest["semantic_config_sha256"] != pins["semantic_config"] or manifest["output_members"] != list(OUTPUTS) or manifest["raw_data_accessed"] is not False or manifest["set2_accessed"] is not False or manifest["candidate_accessed"] is not False or manifest["supervised_target_created"] is not False or manifest["phase_c_usage"] != "post_score_retrospective_endpoint_convention_only":
+    _keys(manifest, {"scope_id", "conclusion", "semantic_config_sha256", "monitor_input_sha256", "retrospective_input_sha256", "source_sha256", "output_sha256", "output_members", "raw_data_accessed", "set2_accessed", "candidate_accessed", "supervised_target_created", "phase_c_usage"}, "evidence manifest")
+    if manifest["scope_id"] != SCOPE_ID or manifest["conclusion"] != CONCLUSION or manifest["monitor_input_sha256"] != pins or manifest["semantic_config_sha256"] != pins["semantic_config"] or manifest["output_members"] != list(OUTPUTS) or manifest["raw_data_accessed"] is not False or manifest["set2_accessed"] is not False or manifest["candidate_accessed"] is not False or manifest["supervised_target_created"] is not False or manifest["phase_c_usage"] != "post_score_authorized_failure_endpoint_proxy_only":
         raise ValidationError("evidence manifest provenance mismatch")
     if manifest["source_sha256"] != sha256_bytes(_read(repo / "src/models/set1_condition_monitor.py", "Phase M source")):
         raise ValidationError("source pin mismatch")
@@ -190,10 +228,10 @@ def validate(repo: Path, config: Path, artifacts: Path) -> dict[str, Any]:
     endpoint = _read(summary_path.parent / "bearing_observation_endpoint_proxies.jsonl", "Phase C endpoint proxies")
     outcomes = _read(summary_path.parent / "trajectory_outcomes.jsonl", "Phase C outcomes")
     retrospective_pins = {"retrospective_phase_c_summary": summary_hash, "phase_c_endpoint_proxies": sha256_bytes(endpoint), "phase_c_trajectory_outcomes": sha256_bytes(outcomes)}
-    if phase_c_members.get("bearing_observation_endpoint_proxies.jsonl") != retrospective_pins["phase_c_endpoint_proxies"] or phase_c_members.get("trajectory_outcomes.jsonl") != retrospective_pins["phase_c_trajectory_outcomes"] or manifest["retrospective_input_sha256"] != retrospective_pins:
+    if phase_c_members.get("bearing_observation_endpoint_proxies.jsonl") != retrospective_pins["phase_c_endpoint_proxies"] or phase_c_members.get("trajectory_outcomes.jsonl") != retrospective_pins["phase_c_trajectory_outcomes"] or manifest["retrospective_input_sha256"] != retrospective_pins or retrospective_pins != expected_retrospective_pins:
         raise ValidationError("retrospective Phase C pin mismatch")
     validation = _object(values["validation_summary.json"], "validation summary")
-    if validation.get("conclusion") != "condition_information_beyond_clock_not_established" or validation.get("bearing_timestamp_count") != 8_624 or validation.get("sensor_score_count") != 17_248 or validation.get("states") != list(STATES):
+    if validation != expected_validation:
         raise ValidationError("validation summary contract mismatch")
     return {"accepted": True, "scope_id": SCOPE_ID, "bearing_timestamp_count": len(bearing_rows), "sensor_score_count": len(sensor_rows), "conclusion": validation["conclusion"]}
 

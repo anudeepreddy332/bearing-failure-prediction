@@ -64,8 +64,10 @@ do not define the next product. The active evaluation contract is in
 - Elapsed-time-only and fixed-interval policies are mandatory baselines. A signal
   monitor must outperform them under trajectory-safe evaluation before claiming
   condition-monitoring value; learning experiment age alone is not enough.
-- Endpoint proximity is retrospective evaluation only. It cannot fit monitor features,
-  thresholds, or online scoring, and it is not failure lead time.
+- For documented Set 1 failures 3/4, their final recorded timestamps are the authorized
+  `observed_failure_endpoint_proxy` modeling convention. Retrospective lead to that proxy
+  cannot fit monitor features, thresholds, or online scoring, and is not an independently
+  observed physical event instant or failure-onset lead time.
 - Phase M consumes only pinned Phase B identities and Phase D features. It emits
   condition-deviation states at physical-bearing timestamp grain with fixed sensor
   weights, and it may abstain. It is not RUL, an outcome model, automatic replacement,

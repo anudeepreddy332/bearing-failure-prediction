@@ -60,7 +60,8 @@ search this grid opportunistically.
 
 The primary evidence will be baseline stability, descriptive trendability and
 monotonicity, cross-bearing consistency, alert burden, persistence/hysteresis,
-lead time to the observed endpoint, abstention, and sensitivity. Alert burden is not
+lead time to the authorized failure-endpoint proxy for documented failures, abstention,
+and sensitivity. Alert burden is not
 a false-positive rate without defensible state truth. Lead time is not failure lead
 time. Accuracy, AUC, and F1 are not claims without supported labels.
 

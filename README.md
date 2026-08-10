@@ -17,7 +17,7 @@ dashboard, cloud, or productionization work.
 | Area | Status |
 | --- | --- |
 | Primary objective | Causal condition-deviation monitoring with persistent human-review inspection alerts |
-| Endpoint-proxy boundary | `observed_failure_endpoint_proxy` is a secondary retrospective convention, not exact failure or RUL truth |
+| Endpoint-proxy boundary | For documented terminal failures, `observed_failure_endpoint_proxy` is the final-recorded-timestamp modeling convention, not an independently observed physical event instant or RUL truth |
 | Current evidence level | Canonical evidence includes a Set 1-only causal condition monitor; it has no target, deployment, or savings claim |
 | Production readiness | Not production-ready |
 | Current direction | `docs/PROJECT_ROADMAP.md`, `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 |
