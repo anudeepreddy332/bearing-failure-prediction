@@ -72,6 +72,9 @@ do not define the next product. The active evaluation contract is in
   condition-deviation states at physical-bearing timestamp grain with fixed sensor
   weights, and it may abstain. It is not RUL, an outcome model, automatic replacement,
   or authorization for Set 2/candidate use.
+- Phase N found `KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK`: the frozen monitor did
+  not establish stable value beyond the shared clock. Do not retune it, implement
+  policy/cost work, or reinterpret the result as authorization for downstream use.
 - Phase E established that the observed-run-end proxy is exactly reproduced by the shared
   experiment clock for Set 1. Do not retune, rank, or promote a model against that proxy
   as bearing-degradation evidence. The fixed Phase E Ridge diagnostic is not a GO signal.

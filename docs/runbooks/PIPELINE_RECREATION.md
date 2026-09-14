@@ -15,6 +15,11 @@
 > `python scripts/validate_set1_condition_monitor.py --repo-root . --artifacts
 > reports/evaluation/ims_set1_condition_monitor_v1`.
 
+> **Phase N current evidence:** The frozen clock-comparator proof concludes
+> `KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK`. It blocks policy comparison and
+> scenario-cost work from the current monitor evidence; it does not authorize retuning,
+> Set 2 use, or serving.
+
 **Status as of 2026-07-04:** Postgres is healthy but empty (no `features` table →
 migrations have never been applied). This runbook documents how the canonical
 pipeline is *intended* to build the database, verified by reading every script, and
