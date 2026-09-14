@@ -87,6 +87,21 @@ jobs:
           python scripts/validate_set1_condition_monitor.py --repo-root . \
             --artifacts reports/evaluation/ims_set1_condition_monitor_v1
 
+      - name: Rebuild and validate Phase N clock-comparator proof
+        run: |
+          first=$(mktemp -d)
+          second=$(mktemp -d)
+          python -m src.models.set1_clock_comparator_proof --repo-root . \
+            --output-dir "$first/artifacts"
+          python -m src.models.set1_clock_comparator_proof --repo-root . \
+            --output-dir "$second/artifacts"
+          diff -r "$first/artifacts" "$second/artifacts"
+          python scripts/validate_set1_clock_comparator_proof.py --repo-root . \
+            --artifacts "$first/artifacts"
+          diff -r "$first/artifacts" reports/evaluation/ims_set1_clock_comparator_proof_v1
+          python scripts/validate_set1_clock_comparator_proof.py --repo-root . \
+            --artifacts reports/evaluation/ims_set1_clock_comparator_proof_v1
+
       - name: Rebuild and validate Phase E portability evidence without raw recordings
         run: |
           first=$(mktemp -d)

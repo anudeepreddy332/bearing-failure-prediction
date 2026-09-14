@@ -18,7 +18,7 @@ dashboard, cloud, or productionization work.
 | --- | --- |
 | Primary objective | Causal condition-deviation monitoring with persistent human-review inspection alerts |
 | Endpoint-proxy boundary | For documented terminal failures, `observed_failure_endpoint_proxy` is the final-recorded-timestamp modeling convention, not an independently observed physical event instant or RUL truth |
-| Current evidence level | Canonical evidence includes a Set 1-only causal condition monitor; it has no target, deployment, or savings claim |
+| Current evidence level | Phase M monitor evidence is followed by a Phase N KILL: it is not established as robust beyond the shared clock; it has no target, deployment, or savings claim |
 | Production readiness | Not production-ready |
 | Current direction | `docs/PROJECT_ROADMAP.md`, `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 |
 
@@ -179,10 +179,9 @@ ruff check .
 
 ## Current Path
 
-1. Validate the Phase M causal condition-monitor evidence and its causal/abstention
-   contract before any policy or external-validation work.
-2. Compare condition-monitor behavior to run-to-failure, fixed-interval, and
-   elapsed-time-only policies before interpreting signal value.
+1. Preserve the Phase N `KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK` result. The
+   current monitor evidence does not authorize policy or external-validation work.
+2. Do not retune or reinterpret the Phase M monitor to bypass the frozen clock proof.
 3. Keep Set 2 in its frozen development-evidence role. Do not perform outcome/event-time
    work or development use without separate authorization; pooling requires a separate ADR.
 4. Do not revisit API/dashboard productionization until later evidence supports a

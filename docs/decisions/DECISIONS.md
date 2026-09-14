@@ -1024,6 +1024,25 @@ deployment, or production claim.
 
 ---
 
+### D-045 — Kill the Phase M signal policy as not robust beyond the clock
+**Decision:** Phase N freezes one common elapsed-observation schedule and one fixed
+inspection-interval reference before calculation, then compares them to the unchanged
+Phase M primary state sequence. The result is
+`KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK`.
+
+**Why:** The clock schedule and signal states differ at matched timestamps, but the
+predeclared sensitivity gate fails: persistent-burden ordering changes across variants,
+and the frozen Phase M sensitivity evidence has aggregate counts rather than per-variant
+first-alert positions. The required onset-order stability therefore cannot be
+established. Endpoint proxies for documented bearings 3/4 are retrospective only and
+were not used to construct or select comparators.
+
+**Consequences:** No retuning, supervised target, model promotion, cost claim, serving,
+Set 2 access, candidate access, or external-data access follows from this result. Any
+future monitor direction requires a separately authorized evidence path.
+
+---
+
 ## Log format for future entries
 
 ```
