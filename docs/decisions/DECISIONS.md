@@ -1,5 +1,7 @@
 # Engineering decision log
 
+> **Archival notice.** This append-only record preserves the wording at each decision date. [D-046](#d-046--close-the-ims-research-and-integrate-the-evidence) supersedes the branch-status statement, publication rules and forward plans below for this closeout. See the [research closeout](../RESEARCH_CLOSEOUT.md) for the final evidence boundary.
+
 Append-only log of concrete engineering decisions made during the production
 readiness refactor, in the order they were made. Each entry captures the
 decision, why, and what was rejected — not just what changed. See
@@ -1040,6 +1042,16 @@ were not used to construct or select comparators.
 **Consequences:** No retuning, supervised target, model promotion, cost claim, serving,
 Set 2 access, candidate access, or external-data access follows from this result. Any
 future monitor direction requires a separately authorized evidence path.
+
+---
+
+### D-046 — Close the IMS research and integrate the evidence
+
+**Decision:** Close the study at the Phase N decision in D-045. Publish the evidence, qualified findings and archive through the authorized pull request to `main`. The old D-001 prohibition on changing `main` without explicit user authorization has been satisfied for this integration.
+
+**Evidence:** Phase 1 found poor transfer on the two documented damaged trajectories. Phase C established terminal damage with unknown event time. Phase E showed the shared experiment clock exactly reconstructs the Set 1 run-end proxy. Phase K found no authoritative Set 2 event-time evidence. Phase N found state differences from elapsed time but failed the predeclared burden and onset stability gates.
+
+**Consequences:** No model, threshold, maintenance policy or deployment is promoted. Planned phases after N are outside this completed project. Preserve the original reports and prototype figures as historical evidence. The corrective commits were replayed from `d780c28` with the local database runtime omitted from every commit. The replayed evidence tree matched the published tip `1fa0d210` before closeout changes. Published refs retain the original commit IDs and provenance.
 
 ---
 

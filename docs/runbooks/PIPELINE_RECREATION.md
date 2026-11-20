@@ -1,24 +1,6 @@
-# Runbook — Recreating the production database from empty
+# Historical runbook for the Postgres prototype
 
-> **Current-path notice:** This runbook preserves reproducible historical evidence paths.
-> The active direction is `docs/PROJECT_ROADMAP.md`,
-> `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043. Phase L freezes the
-> condition-monitoring contract only; no causal monitor, policy comparison, or serving
-> workflow is implemented here. Historical pipeline instructions below do not authorize
-> a new RUL-first model, Set 2 target, or production claim.
-
-> **Phase M current evidence:** `ims_set1_condition_monitor_v1` is a Set 1-only,
-> causal condition-deviation package. It consumes pinned Phase B/D evidence, publishes
-> bearing-level deviation states, and uses Phase C only after scoring for retrospective
-> authorized failure-endpoint-proxy description for documented Set 1 failures 3/4. It is not RUL, failure-time prediction, automatic
-> replacement, Set 2 use, or serving. Validate it raw-free with
-> `python scripts/validate_set1_condition_monitor.py --repo-root . --artifacts
-> reports/evaluation/ims_set1_condition_monitor_v1`.
-
-> **Phase N current evidence:** The frozen clock-comparator proof concludes
-> `KILL_SIGNAL_POLICY_NOT_ROBUST_BEYOND_CLOCK`. It blocks policy comparison and
-> scenario-cost work from the current monitor evidence; it does not authorize retuning,
-> Set 2 use, or serving.
+> **Archived.** The instructions below describe the legacy database prototype and its missing pieces as of the recorded audit. The [research closeout](../RESEARCH_CLOSEOUT.md) records the completed database-free research and terminal decision. For clean-clone checks, follow the [CI workflow](../../.github/workflows/ci.yml).
 
 **Status as of 2026-07-04:** Postgres is healthy but empty (no `features` table →
 migrations have never been applied). This runbook documents how the canonical

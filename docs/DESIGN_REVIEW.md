@@ -1,5 +1,7 @@
 # Design Review — Response to Principal-Engineer Peer Review
 
+> **Archived design review.** Architectural proposals, next steps and old outcome assumptions below are retained as written. The [completed phase map](PROJECT_ROADMAP.md) and [research closeout](RESEARCH_CLOSEOUT.md) record the implemented work and superseding decisions.
+
 > **Historical snapshot:** This 2026-07-04 review is retained as context, not active
 > project direction. Use `docs/PROJECT_ROADMAP.md`,
 > `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 for current guidance. It does

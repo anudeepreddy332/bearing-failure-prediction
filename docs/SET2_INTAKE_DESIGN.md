@@ -1,6 +1,6 @@
 # Set 2 Intake Architecture and Terra Handoff Plan
 
-**Current status -- historical design only:** Phase I freezes `ims_set2` as
+**Closed project status (historical design):** Phase I freezes `ims_set2` as
 `development_evidence` with prior terminal metadata awareness; it remains unusable until a
 separately authorized use. Phase J adjudicates terminal metadata only: bearing 1 has documented
 terminal damage with timing unknown, while bearings 2-4 have no reported bearing-specific
@@ -8,8 +8,7 @@ terminal outcome and no established terminal event. It concludes no supervised t
 created from available metadata. It is not an untouched or blind external holdout. Historical
 sections below that describe an exact failure/RUL-zero endpoint,
 censoring, or an external-validation role are superseded as current assumptions and retained
-only as historical design context. D-043 and `docs/PROJECT_ROADMAP.md` are the active
-direction; this document does not authorize Set 2 targets, development use, or evaluation.
+only as historical design context. The [research closeout](RESEARCH_CLOSEOUT.md) records the final decision. The implementation plan below remained outside the completed study.
 
 **Phase K update:** A finite primary and secondary documentation search found no authoritative
 bearing-linked event timestamp or independently supported interval bounds. Repeated claims that

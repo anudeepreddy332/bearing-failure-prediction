@@ -1,5 +1,7 @@
 # Production Readiness Audit & Refactor Blueprint
 
+> **Archived audit.** Scores, cloud plans and implementation proposals below describe an earlier refactor plan. The [completed phase map](PROJECT_ROADMAP.md) and [research closeout](RESEARCH_CLOSEOUT.md) supersede them.
+
 > **Historical snapshot:** This audit records a 2026-07-04 review and is not the active
 > project direction. Use `docs/PROJECT_ROADMAP.md`,
 > `docs/CONDITION_MONITORING_ARCHITECTURE.md`, and D-043 for current guidance. The audit

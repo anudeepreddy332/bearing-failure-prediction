@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ims-bearing-failure-prediction"
 version = "0.1.0"
-description = "Predictive-maintenance ML system estimating bearing Remaining Useful Life (RUL) from vibration signals."
+description = "Completed IMS vibration research on endpoint-proxy validation and causal condition monitoring."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

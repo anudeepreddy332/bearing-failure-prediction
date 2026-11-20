@@ -75,6 +75,7 @@ Desktop.ini
 
 # Archives & Notebooks (keep local only)
 archive/
+!docs/archive/
 notebooks/
 *.ipynb
 
@@ -111,7 +112,7 @@ coverage.xml
 !reports/feature_trends/*.png
 !reports/evaluation/*.png
 !reports/feature_importance.png
-!reports/streamlit_dashboard/*.pdf
+!docs/archive/dashboard-exports/*.pdf
 
 # Additional documentation/temp files
 data/*.docx

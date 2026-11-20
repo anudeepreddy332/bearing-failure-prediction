@@ -1,5 +1,7 @@
 # Set 3 Source Intake Boundary
 
+> **Closed intake record.** The observed candidate remains unresolved and unevaluated at [research closeout](RESEARCH_CLOSEOUT.md). The future role below records the historical eligibility boundary.
+
 ## Status
 
 Phase F recovered and registered the ignored local package
@@ -25,7 +27,7 @@ The selected outer member was named `IMS/3rd_test.rar`. Its metadata-only inner 
 the observed root `4th_test/txt`. This naming discrepancy is recorded as an unresolved
 provenance limitation, not interpreted as a dataset-role or outcome claim. The inner
 index uses `bsdtar` metadata listing only; encryption status is not independently
-verified, and no signal payload is opened.
+verified. Phase F did not open signal payloads. Phase G separately validated recording shape and finiteness under its structural-only authorization.
 
 The local copy is not publisher-authenticated. A local SHA-256 proves only byte stability
 after registration. License terms and original acquisition details are not independently

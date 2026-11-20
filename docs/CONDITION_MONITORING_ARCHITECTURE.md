@@ -1,9 +1,6 @@
 # Condition Monitoring Architecture
 
-This is the active architecture for the condition-monitoring evidence path. Phase M
-implemented the causal monitor as Set 1-only evidence, and Phase N killed its policy
-claim as not robust beyond the clock. No replacement policy or serving path is
-implemented by this document.
+> **Frozen Phase L design.** Phase M implemented the causal evidence monitor on Set 1, and Phase N rejected the policy under its robustness criteria. The diagram includes proposed human review, maintenance and cost stages that remained outside the implementation. The [research closeout](RESEARCH_CLOSEOUT.md) records the terminal decision.
 
 ## Product Contract
 
@@ -30,9 +27,9 @@ flowchart LR
 
 The manifest/identity/outcome evidence, canonical sensor-local features, and
 early-prefix monitor are implemented foundations. Human-review workflow, policy, and
-scenario-cost work remain planned and cannot claim a field result.
+scenario-cost work were proposals and remain outside the completed project.
 
-## Planned Causal Monitor Contract
+## Frozen Causal Monitor Contract
 
 For each monitored physical trajectory, the Phase M monitor:
 

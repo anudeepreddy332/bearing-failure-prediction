@@ -1,6 +1,6 @@
 # src/dashboard/app.py
 """
-Interactive Streamlit dashboard for bearing health monitoring
+Historical Streamlit prototype for the Set 1 run-end proxy
 """
 import os
 import streamlit as st
@@ -36,16 +36,15 @@ engine = get_db_connection()
 features = pd.read_csv('data/processed/selected_features.csv')['feature'].tolist()
 
 # Dashboard header
-st.title("⚙️ Bearing Failure Prediction Dashboard")
-st.markdown("**Prototype RUL monitoring dashboard | validation claims under correction**")
+st.title("Historical bearing vibration dashboard")
 st.warning(
-    "This dashboard uses the existing leaky-regime model artifact. "
-    "Current source-of-truth validation is leakage-safe Phase 1, not the old 2.88h headline metric."
+    "Archived prototype. The model estimates a run-end proxy using the earlier row-level "
+    "validation design. Displayed ranges are for retrospective demonstration only."
 )
 
 # Sidebar
 st.sidebar.header("Configuration")
-st.sidebar.info("💡 Only bearings 3 & 4 are shown (these are the only bearings that failed in the dataset)")
+st.sidebar.info("Bearings 3 and 4 have documented terminal damage. Event times are unknown.")
 bearing_id = st.sidebar.selectbox("Select Bearing", [3, 4], index=0)
 axis = st.sidebar.selectbox("Select Axis", ["x", "y"], index=0)
 
@@ -93,22 +92,22 @@ if len(df) > 0:
     with col2:
         st.metric("Current Kurtosis", f"{latest['kurtosis_mean']:.2f}")
     with col3:
-        st.metric("Actual RUL", f"{current_rul:.1f} hours")
+        st.metric("Observed run-end proxy", f"{current_rul:.1f} hours")
     with col4:
         if pred_rul:
             error = abs(pred_rul - current_rul)
-            st.metric("Predicted RUL", f"{pred_rul:.1f} hours",
+            st.metric("Prototype estimate", f"{pred_rul:.1f} hours",
                       delta=f"{error:.1f}h error")
         else:
-            st.metric("Predicted RUL", "N/A")
+            st.metric("Prototype estimate", "N/A")
 
     # Risk indicator
     if pred_rul and pred_rul < 50:
-        st.error("🚨 CRITICAL: Schedule emergency maintenance immediately!")
+        st.error("Prototype estimate below 50 hours")
     elif pred_rul and pred_rul < 150:
-        st.warning("⚠️ WARNING: Schedule maintenance within 3-5 days")
+        st.warning("Prototype estimate from 50 to under 150 hours")
     else:
-        st.success("✅ NORMAL: Bearing health is acceptable")
+        st.success("No lower-range prototype estimate")
 
     # Plot degradation over time
     st.subheader("Degradation Trends (Last 200 Measurements)")
@@ -151,21 +150,21 @@ if len(df) > 0:
     st.plotly_chart(fig, use_container_width=True)
 
     # RUL prediction over time
-    st.subheader("RUL Degradation Over Time")
+    st.subheader("Run-end proxy over time")
 
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(
         x=df_sorted['timestamp'],
         y=df_sorted['rul_hours'],
         mode='lines+markers',
-        name='Actual RUL',
+        name='Observed run-end proxy',
         line=dict(color='green', width=2),
         marker=dict(size=4),
         fill='tozeroy',
         fillcolor='rgba(0,255,0,0.1)'
     ))
     fig2.update_layout(
-        yaxis=dict(title=dict(text="RUL (hours)")),
+        yaxis=dict(title=dict(text="Run-end proxy (hours)")),
         xaxis=dict(title=dict(text="Time")),
         height=400
     )
@@ -236,23 +235,14 @@ if len(df) > 0:
     with info_col1:
         st.metric("Total Measurements", f"{len(df):,}")
     with info_col2:
-        st.metric("Initial RUL", f"{df['rul_hours'].max():.1f} hours")
+        st.metric("Largest displayed proxy", f"{df['rul_hours'].max():.1f} hours")
     with info_col3:
-        st.metric("Time to Failure", f"{df['rul_hours'].max() / 24:.1f} days")
+        st.metric("Largest displayed proxy (days)", f"{df['rul_hours'].max() / 24:.1f} days")
 
 else:
     st.error("❌ No data found for selected bearing")
 
 # Footer
-st.markdown("---")
-st.markdown("""
-**Model Details:**
-- **Algorithm:** LightGBM v2 artifact from the earlier tuning regime
-- **Validation status:** Prototype only; old row-level metrics are deprecated due to leakage
-- **Leakage-safe LOBO MAE:** 226.46 hours
-- **Leakage-safe purged time-series MAE:** 122.00 hours
-- **Source-of-truth report:** `reports/evaluation/phase1_validation_leakage_safe/validation_report.md`
-- **Dataset:** NASA IMS Bearing Dataset
-- **Features:** 50 selected from 380 engineered features
-- **Author:** Anudeep | Mechanical Engineer → Data Scientist
-""")
+st.markdown(
+    "Historical LightGBM v2 prototype. See docs/RESEARCH_CLOSEOUT.md for the evaluation record."
+)

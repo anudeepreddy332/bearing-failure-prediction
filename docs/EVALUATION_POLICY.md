@@ -1,12 +1,6 @@
 # Condition Monitoring and Policy Evaluation
 
-This document defines the active evaluation objective. Causal condition-deviation
-monitoring with persistent human-review inspection alerts is primary. Historical
-endpoint-proxy regression is secondary retrospective context, not the current
-product objective.
-
-Source-of-truth baseline for this policy:
-`reports/evaluation/phase1_validation_leakage_safe/validation_report.md`.
+> **Frozen evaluation record.** Phases L–N used this contract. Phase N rejected the monitor under its frozen robustness criteria and D-046 closed the project. The forward-looking policy and cost material below is retained as historical design. See the [research closeout](RESEARCH_CLOSEOUT.md).
 
 **Evidence boundary:** For a trajectory whose official IMS manual identifies terminal
 damage, the final observation timestamp may be used only as the documented
@@ -113,7 +107,7 @@ This scalar score is provisional. Replace the weights once actual downtime cost,
 maintenance dispatch cost, bearing replacement cost, and required lead time are
 known.
 
-## Current Selection Rules
+## Frozen Selection Rules
 
 Any separately authorized monitor or benchmark must follow these rules:
 
@@ -146,7 +140,7 @@ Future tuning reports should add per-bearing lead-time metrics:
 These are proxies, not business-validated lead-time metrics, until maintenance
 planning lead time is provided.
 
-## Current Policy and Business Boundary
+## Historical Policy and Business Boundary
 
 Later policy work must compare run to failure, fixed-interval replacement,
 elapsed-time-only, endpoint-proxy supervised benchmark, and signal-based condition
@@ -167,13 +161,7 @@ human inspection gate protect against premature replacement. Until prospective c
 evidence exists, report ranges and sensitivity, not guaranteed savings, production
 effectiveness, exact failure timing, or automatic-replacement readiness.
 
-## Current Technical Priority
-
-Do not productionize the API/dashboard or retune against the observed-run-end proxy.
-Phase L freezes the condition-monitoring contract before the separately authorized
-Phase M implementation. Set 2 retains its frozen Phase I role and has no current use
-authorization; Phases J and K prohibit supervised target creation from current metadata.
-The observed candidate remains protected until source/identity resolution.
+## Evidence Reproduction Boundary
 
 Phase E's recorded canonical-publication runtime owns its exact diagnostic bytes. A
 portability-validation runtime may validate frozen identities, folds, endpoint-proxy
