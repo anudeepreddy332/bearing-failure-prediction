@@ -67,6 +67,8 @@ The [completed phase map](PROJECT_ROADMAP.md) traces Phases A–N to the version
 
 The [CI workflow](../.github/workflows/ci.yml) records the exact raw-free commands, validator arguments, package paths and repeat/diff checks. Local closeout verification used Darwin arm64, CPython 3.11.15 and a temporary venv with the Phase E constraints (NumPy 2.2.6, pandas 2.3.2, SciPy 1.16.1 and scikit-learn 1.7.2). The temporary builds were compared with the tracked evidence. GitHub Actions supplies the separate Ubuntu/Python 3.11 check on the PR and merge.
 
+The [initial Ubuntu PR run](https://github.com/anudeepreddy332/bearing-failure-prediction/actions/runs/44685202725) failed Phase E's repeat-byte check. All scientific output hashes matched. The two runtime fingerprints listed the same native libraries in a different order. CI now installs `threadpoolctl==3.6.0`, the release used by the earlier [published Phase N run](https://github.com/anudeepreddy332/bearing-failure-prediction/actions/runs/34812824875). The workflow retains both rebuilds, the full byte comparison and all validators. The canonical producer, constraints, evidence and acceptance rules keep their published bytes.
+
 | Check | Command or workflow step | Observed local outcome |
 | --- | --- | --- |
 | Lint and tests | `ruff check .` and `pytest tests/ -q -p no:cacheprovider` | Passed. 560 tests collected and ran DB-free. The existing short-window SciPy warnings remain. |
