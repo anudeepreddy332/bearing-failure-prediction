@@ -1,15 +1,19 @@
 # src/api/predict_api.py
 """
-FastAPI endpoint for real-time bearing RUL prediction
+Historical FastAPI prototype for the Set 1 run-end proxy
 """
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pickle
-import numpy as np
 import pandas as pd
-from typing import List
 
-app = FastAPI(title="Bearing RUL Prediction API")
+app = FastAPI(
+    title="Historical Bearing Run-End Proxy API",
+    description=(
+        "Retrospective prototype using the archived LightGBM artifact. "
+        "Response fields retain the legacy schema. Risk and action strings are unvalidated demo output."
+    ),
+)
 
 # Load model at startup
 with open('models/lightgbm_v2_tuned.pkl', 'rb') as f:
@@ -31,7 +35,7 @@ class PredictionResponse(BaseModel):
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict_rul(request: PredictionRequest):
-    """Predict remaining useful life for a bearing"""
+    """Return the legacy estimate of hours to the run end"""
 
     try:
         # Convert to DataFrame

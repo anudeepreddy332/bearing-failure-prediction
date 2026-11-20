@@ -1,0 +1,91 @@
+{
+  "channel_pairs": [
+    {
+      "physical_bearing_id": "bearing_1",
+      "physical_bearing_number": 1,
+      "sensor_channels": [
+        {
+          "project_channel_order_convention": "x",
+          "source_channel_index": 0
+        },
+        {
+          "project_channel_order_convention": "y",
+          "source_channel_index": 1
+        }
+      ]
+    },
+    {
+      "physical_bearing_id": "bearing_2",
+      "physical_bearing_number": 2,
+      "sensor_channels": [
+        {
+          "project_channel_order_convention": "x",
+          "source_channel_index": 2
+        },
+        {
+          "project_channel_order_convention": "y",
+          "source_channel_index": 3
+        }
+      ]
+    },
+    {
+      "physical_bearing_id": "bearing_3",
+      "physical_bearing_number": 3,
+      "sensor_channels": [
+        {
+          "project_channel_order_convention": "x",
+          "source_channel_index": 4
+        },
+        {
+          "project_channel_order_convention": "y",
+          "source_channel_index": 5
+        }
+      ]
+    },
+    {
+      "physical_bearing_id": "bearing_4",
+      "physical_bearing_number": 4,
+      "sensor_channels": [
+        {
+          "project_channel_order_convention": "x",
+          "source_channel_index": 6
+        },
+        {
+          "project_channel_order_convention": "y",
+          "source_channel_index": 7
+        }
+      ]
+    }
+  ],
+  "dataset_id": "ims_set1",
+  "expected_cardinalities": {
+    "bearing_observations": 8624,
+    "physical_trajectories": 4,
+    "recordings": 2156,
+    "sensor_observations": 17248,
+    "sensor_streams": 8,
+    "total_entity_rows": 30198
+  },
+  "expected_recording_metadata": {
+    "expected_channel_count": 8,
+    "expected_sample_count": 20480,
+    "sampling_rate_hz": 20000
+  },
+  "phase_a_dataset_spec": {
+    "dataset_spec_file_sha256": "7ed18f7585c65c2012caa543c80107d137d3727ff06b842c430f2d5c62b70181",
+    "dataset_spec_semantic_json_sha256": "102fe1268242e4c4c0234203ded2554178a2f9d8b5206ca631ae466745c0e5af",
+    "relative_path": "configs/datasets/ims_set1_v1.json"
+  },
+  "phase_a_recordings_manifest": {
+    "recordings_manifest_sha256": "f93e2f381ebeaf95d617ba1fe40c2d8ab24ca0c50f4c6887b435f30c5c960176",
+    "relative_path": "data/manifests/ims_set1/v1/recordings_manifest.jsonl"
+  },
+  "physical_orientation_verified": false,
+  "preflight_selection": {
+    "additional_lowest_hash_ranked_records": 28,
+    "fixed_recording_indices": [0, 42, 43, 2155],
+    "hash_input_tag": "ims_set1_phase_b_preflight_rank_v1"
+  },
+  "run_id": "1st_test",
+  "schema_version": "ims_set1_identity_v1"
+}

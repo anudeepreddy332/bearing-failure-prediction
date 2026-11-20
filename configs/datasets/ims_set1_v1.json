@@ -1,0 +1,20 @@
+{
+  "schema_version": "ims_set1_source_registration_v1",
+  "dataset_id": "ims_set1",
+  "run_id": "1st_test",
+  "raw_directory": "data/raw/set1/1st_test",
+  "filename_format": "%Y.%m.%d.%H.%M.%S",
+  "expected_recording_count": 2156,
+  "expected_recording_names_sha256": "ce15a9fc4b0a4ebb7ef0e3684e570774e66357b13824055a891bddc92217dba3",
+  "declared_recording_metadata": {
+    "expected_channel_count": 8,
+    "expected_sample_count": 20480,
+    "sampling_rate_hz": 20000
+  },
+  "source_authenticity_status": "local_copy_not_publisher_authenticated",
+  "provenance_gaps": [
+    "No publisher-supplied checksum is present in the repository.",
+    "No acquisition-chain record for the local raw copy is present in the repository.",
+    "Recording timestamps are source-local; timezone is not established."
+  ]
+}

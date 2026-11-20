@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main, production-readiness-refactor]
+  pull_request:
+    branches: [main, production-readiness-refactor]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Keep the Phase E repeat manifests deterministic on Linux. Newer
+          # threadpoolctl enumerates libraries with an unordered set from /proc/self/maps.
+          python -m pip install -c requirements/ims_set1_phase_e_reference_v1.txt -e ".[dev]" "threadpoolctl==3.6.0"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Test (pytest)
+        run: pytest tests/ -q -p no:cacheprovider
+
+      - name: Validate Phase D canonical artifact
+        run: >
+          python scripts/validate_set1_phase_d_preflight.py --repo-root .
+          --artifacts data/canonical/ims_set1_sensor_local_base_features/v1
+          --expected-row-count 17248
+          --canonical-manifest
+          data/manifests/ims_set1_sensor_local_base_features/v1/canonical_manifest.json
+
+      - name: Validate Set 2/3 source registration evidence
+        run: >
+          python scripts/validate_sets23_source_registration.py --repo-root .
+          --config configs/datasets/ims_sets23_source_packages_v1.json
+          --artifacts data/manifests/ims_sets23_source_packages/v1
+
+      - name: Validate Phase G structural identity evidence
+        run: >
+          python scripts/validate_sets23_structural_identity.py
+          --repo-root . --config configs/datasets/ims_sets23_structural_identity_v1.json
+          --artifacts data/manifests/ims_sets23_structural_identity/v3
+
+      - name: Validate Phase H mapping evidence
+        run: >
+          python scripts/validate_sets23_mapping_evidence.py
+          --repo-root . --config configs/datasets/ims_sets23_mapping_evidence_v1.json
+          --artifacts data/manifests/ims_sets23_mapping_evidence/v1
+
+      - name: Validate Phase I dataset-role freeze evidence
+        run: >
+          python scripts/validate_sets23_role_freeze.py
+          --repo-root . --config configs/datasets/ims_sets23_role_freeze_v1.json
+          --artifacts data/manifests/ims_sets23_role_freeze/v1
+
+      - name: Validate Phase J Set 2 outcome metadata evidence
+        run: >
+          python scripts/validate_set2_outcome_evidence.py
+          --repo-root . --config configs/datasets/ims_set2_outcome_evidence_v1.json
+          --artifacts data/manifests/ims_set2_outcome_evidence/v1
+
+      - name: Validate Phase K Set 2 event-evidence search
+        run: >
+          python scripts/validate_set2_event_evidence.py --repo-root . --config
+          configs/datasets/ims_set2_event_evidence_search_v1.json --artifacts
+          data/manifests/ims_set2_event_evidence/v1
+
+      - name: Rebuild and validate Phase M condition-monitor evidence
+        run: |
+          first=$(mktemp -d)
+          second=$(mktemp -d)
+          python -m src.models.set1_condition_monitor --repo-root . \
+            --output-dir "$first/artifacts"
+          python -m src.models.set1_condition_monitor --repo-root . \
+            --output-dir "$second/artifacts"
+          diff -r "$first/artifacts" "$second/artifacts"
+          python scripts/validate_set1_condition_monitor.py --repo-root . \
+            --artifacts "$first/artifacts"
+          diff -r "$first/artifacts" reports/evaluation/ims_set1_condition_monitor_v1
+          python scripts/validate_set1_condition_monitor.py --repo-root . \
+            --artifacts reports/evaluation/ims_set1_condition_monitor_v1
+
+      - name: Rebuild and validate Phase N clock-comparator proof
+        run: |
+          first=$(mktemp -d)
+          second=$(mktemp -d)
+          python -m src.models.set1_clock_comparator_proof --repo-root . \
+            --output-dir "$first/artifacts"
+          python -m src.models.set1_clock_comparator_proof --repo-root . \
+            --output-dir "$second/artifacts"
+          diff -r "$first/artifacts" "$second/artifacts"
+          python scripts/validate_set1_clock_comparator_proof.py --repo-root . \
+            --artifacts "$first/artifacts"
+          diff -r "$first/artifacts" reports/evaluation/ims_set1_clock_comparator_proof_v1
+          python scripts/validate_set1_clock_comparator_proof.py --repo-root . \
+            --artifacts reports/evaluation/ims_set1_clock_comparator_proof_v1
+
+      - name: Rebuild and validate Phase E portability evidence without raw recordings
+        run: |
+          first=$(mktemp -d)
+          second=$(mktemp -d)
+          python -m src.models.set1_phase_e_identifiability --repo-root . \
+            --output-dir "$first/artifacts" \
+            --execution-role portability-validation
+          python -m src.models.set1_phase_e_identifiability --repo-root . \
+            --output-dir "$second/artifacts" \
+            --execution-role portability-validation
+          diff -r "$first/artifacts" "$second/artifacts"
+          python scripts/validate_set1_phase_e_evidence.py --repo-root . \
+            --artifacts "$first/artifacts" --mode portability-validation
+          python scripts/validate_set1_phase_e_evidence.py --repo-root . \
+            --artifacts reports/evaluation/ims_set1_phase_e_identifiability_v1 \
+            --mode canonical-publication --canonical-manifest \
+            data/manifests/ims_set1_phase_e_identifiability/v1/canonical_manifest.json
+          python scripts/audit_set1_phase_e_cross_runtime.py \
+            --reference-artifacts reports/evaluation/ims_set1_phase_e_identifiability_v1 \
+            --portability-artifacts "$first/artifacts" \
+            --portability-repeat "$second/artifacts" \
+            --output "$first/phase_e_portability_delta_audit.json"
+          cp "$first/phase_e_portability_delta_audit.json" phase_e_portability_delta_audit.json
+
+      - name: Preserve Phase E portability delta audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-e-portability-delta-audit
+          path: phase_e_portability_delta_audit.json

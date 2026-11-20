@@ -1,17 +1,18 @@
 # src/models/evaluate_tuned.py
 """
-Evaluate tuned LightGBM model with RUL-range breakdown
+Historical LightGBM evaluation on the reused prototype test partition
 """
+import os
 import pickle
 import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 
-DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/anudeep'
+# Env-first (was hardcoded with no override). Default preserved for local dev.
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/anudeep')
 
 
 def load_data():
@@ -70,7 +71,7 @@ def evaluate_by_rul_range(y_true, y_pred):
 
 def main():
     print("=" * 70)
-    print("  TUNED MODEL EVALUATION")
+    print("  HISTORICAL TUNED PROTOTYPE EVALUATION")
     print("=" * 70)
 
     # Load test data
@@ -116,14 +117,7 @@ def main():
         print(f"   Samples: {critical_mask.sum()}")
         print(f"   MAE: {critical_mae:.2f} hours")
 
-        if critical_mae < 10:
-            print("   ✅ EXCELLENT - Production ready!")
-        elif critical_mae < 15:
-            print("   ✅ GOOD - Acceptable for deployment")
-        elif critical_mae < 25:
-            print("   ⚠️  BORDERLINE - Consider further tuning")
-        else:
-            print("   ❌ NEEDS IMPROVEMENT")
+        print("Historical run-end proxy error on the partition reused for tuning.")
 
     # Save results
     output_dir = Path('reports/evaluation')

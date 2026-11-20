@@ -8,7 +8,6 @@ Usage:
     python src/features/select_features.py --method mi --top-n 30
 """
 import os
-import sys
 import argparse
 import logging
 from pathlib import Path
@@ -16,9 +15,6 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.feature_selection import mutual_info_regression
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
 
 warnings.filterwarnings('ignore')
